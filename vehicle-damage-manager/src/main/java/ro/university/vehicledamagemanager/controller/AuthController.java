@@ -1,36 +1,31 @@
 package ro.university.vehicledamagemanager.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.university.vehicledamagemanager.model.User;
-import ro.university.vehicledamagemanager.repository.UserRepository;
+import ro.university.vehicledamagemanager.service.AuthService;
 
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Username deja existent!");
-        }
-        user.setRole("USER"); // Default role
-        return ResponseEntity.ok(userRepository.save(user));
+        return ResponseEntity.ok(authService.register(user));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginData) {
-        Optional<User> user = userRepository.findByUsername(loginData.getUsername());
-
-        if (user.isPresent() && user.get().getPassword().equals(loginData.getPassword())) {
-            return ResponseEntity.ok(user.get());
-        }
-        return ResponseEntity.status(401).body("Date invalide!");
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        return authService.login(credentials.get("username"), credentials.get("password"))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(401).build());
     }
 }

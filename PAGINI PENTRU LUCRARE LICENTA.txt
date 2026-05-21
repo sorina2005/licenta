@@ -1,0 +1,49 @@
+PAGINI PENTRU LUCRARE LICENTA
+
+Pagina de Home (Landing Page)
+Autentificare
+Inregistrare 
+---------------------------------------------------------------------
+CU ROL PRIVAT
+
+Client Dashboard: Statistici despre masinile proprii si statusul dosarelor deschise.
+
+Inspector Dashboard: Lista dosarelor ce necesita constatare si agenda zilnica.
+
+Service Dashboard: Situatia masinilor aflate in reparatie si termenele de finalizare.
+
+Admin Dashboard: Grafice globale privind activitatea centrului si starea sistemului.
+
+
+-------------------------------------------------------------------
+Pagini Specifice pentru Client
+
+
+Gestionare Masini: Lista vehiculelor detinute, cu posibilitatea de a adauga un vehicul nou (VIN, numar inmatriculare).
+
+Dosarele Mele: Istoricul tuturor daunelor si stadiul curent al reparatiilor.
+
+Asistent Virtual (Chatbot): Pagina dedicata sau componenta de tip overlay pentru asistenta in timp real.
+
+
+---------------------------------------------------------------------------------------------------------
+
+
+Pagini Specifice pentru Inspector & Service
+Flux Constatare (Wizard): O pagina complexa, impartita pe pasi:
+
+Scanare LPR: Integrarea modulului Python pentru preluarea numarului de inmatriculare.
+
+Date Tehnice: Formular pentru detalierea avariilor.
+
+Galerie Foto: Modul de incarcare si vizualizare a probelor foto.
+
+Management Reparatii (Service): Lista de sarcini tehnice si buton pentru schimbarea statusului (ex: din "In lucru" in "Finalizat").
+
+
+----------------------------------------------------------------
+
+Pagini de Administrare (Doar pentru ADMIN)
+Management Utilizatori: Singura pagina unde se pot crea conturi pentru Inspectori si Personal Service.
+
+Configurare Sistem: Gestionarea nomenclatoarelor (tipuri de avarii, unitati de service partenere).

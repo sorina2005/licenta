@@ -30,6 +30,11 @@ services:
     build: ./vehicle-damage-manager-ui
     container_name: react-frontend
     ports:
-      - "3000:80"
+      - "3000:5173" # Mapam portul de dev al Vite
+    volumes:
+      - ./vehicle-damage-manager-ui:/app # "Leaga" folderul local de cel din Docker
+      - /app/node_modules # Protejeaza modulele instalate in container
+    environment:
+      - CHOKIDAR_USEPOLLING=true # O alta metoda de a forta refresh-ul
     depends_on:
       - backend
