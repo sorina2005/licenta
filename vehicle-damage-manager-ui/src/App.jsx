@@ -1,48 +1,93 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import RegisterPage from './pages/RegisterPage';
-import LoginPage from './pages/LoginPage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/layout/DashboardLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Unauthorized from './pages/Unauthorized';
+
 import ClientDashboard from './pages/ClientDashboard';
-import MyVehicles from "./pages/MyVehicles.jsx";
-import ReportDamage from "./pages/ReportDamage.jsx";
+import ReportDamage from './pages/ReportDamage';
+import MyVehicles from './pages/MyVehicles';
+import ProfilePage from './pages/ProfilePage';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+import InspectorDashboard from './pages/InspectorDashboard';
+import OperatorDashboard from './pages/OperatorDashboard';
+import ServiceDashboard from './pages/ServiceDashboard';
+
+// Importurile pentru Admin
+import AdminDashboard from './pages/AdminDashboard'; // <-- ADAUGAT
+import AdminUserManagement from './pages/AdminUserManagement';
+import Analytics from './pages/Analytics'; // <-- ASIGURA-TE CA AI IMPORTUL DACA EXISTA
+
+const DashboardRedirect = () => {
     const userJson = localStorage.getItem('user');
-    const user = userJson ? JSON.parse(userJson) : null;
+    let user = null;
 
-    if (!user) {
-        return <Navigate to="/login" replace />;
+    try {
+        user = userJson ? JSON.parse(userJson) : null;
+    } catch (e) {
+        user = null;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" replace />;
-    }
+    const userRole = (user?.role || 'CLIENT').toUpperCase();
 
-    return children;
+    if (userRole === 'CLIENT') return <Navigate to="/client-dashboard" replace />;
+    if (userRole === 'INSPECTOR') return <Navigate to="/inspector-dashboard" replace />;
+    if (userRole === 'OPERATOR') return <Navigate to="/operator-dashboard" replace />;
+    if (userRole === 'SERVICE') return <Navigate to="/service-dashboard" replace />;
+    if (userRole === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+
+    return <Navigate to="/login" replace />;
 };
 
-function App() {
+const App = () => {
     return (
-        <Router>
+        <BrowserRouter>
             <Routes>
-                {/* Rute fara Sidebar */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
-                {/* Rute cu Sidebar (Layout comun) */}
                 <Route element={<DashboardLayout />}>
-                    <Route path="/client-dashboard" element={<ClientDashboard />} />
-                    <Route path="/my-vehicles" element={<MyVehicles />} />
-                    <Route path="/report-damage" element={<ReportDamage />} />
-                </Route>
+                    <Route path="/dashboard" element={<DashboardRedirect />} />
 
-                <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+                        <Route path="/client-dashboard" element={<ClientDashboard />} />
+                        <Route path="/report-damage" element={<ReportDamage />} />
+                        <Route path="/my-vehicles" element={<MyVehicles />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                    </Route>
+
+                    <Route element={<ProtectedRoute allowedRoles={['INSPECTOR']} />}>
+                        <Route path="/inspector-dashboard" element={<InspectorDashboard />} />
+                    </Route>
+
+                    <Route element={<ProtectedRoute allowedRoles={['OPERATOR']} />}>
+                        <Route path="/operator-dashboard" element={<OperatorDashboard />} />
+                    </Route>
+
+                    <Route element={<ProtectedRoute allowedRoles={['SERVICE']} />}>
+                        <Route path="/service-dashboard" element={<ServiceDashboard />} />
+                    </Route>
+
+                    {/* GRUP RUTE ADMIN ACTUALIZAT */}
+                    <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                        <Route path="/admin-user-management" element={<AdminUserManagement />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                    </Route>
+                </Route>
             </Routes>
-        </Router>
+        </BrowserRouter>
     );
-}
+};
 
 export default App;

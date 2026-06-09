@@ -1,41 +1,59 @@
 import React from 'react';
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Box } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import { useNavigate } from 'react-router-dom';
-
-const drawerWidth = 240;
+import { List, ListItem, ListItemButton, ListItemText, Drawer, Toolbar } from '@mui/material';
+import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
-    const navigate = useNavigate();
+    const location = useLocation();
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const role = user?.role || 'CLIENT';
 
-    const menuItems = [
-        { text: 'Dashboard', icon: <DashboardIcon />, path: '/client-dashboard' },
-        { text: 'Vehiculele Mele', icon: <DirectionsCarIcon />, path: '/my-vehicles' }
-    ];
+    const menuConfigs = {
+        ADMIN: [
+            { text: 'Gestiune Utilizatori', path: '/admin-user-management' },
+            { text: 'Analitice Sistem', path: '/analytics' }
+        ],
+        OPERATOR: [
+            { text: 'Triaj Dosare', path: '/operator-dashboard' },
+            { text: 'Analitice', path: '/analytics' }
+        ],
+        INSPECTOR: [
+            { text: 'Dosare Alocate', path: '/inspector-dashboard' }
+        ],
+        SERVICE: [
+            { text: 'Devize Reparatii', path: '/service-dashboard' }
+        ],
+        CLIENT: [
+            { text: 'Dosarele Mele', path: '/client-dashboard' },
+            { text: 'Vehiculele Mele', path: '/my-vehicles' }
+        ]
+    };
+
+    const currentMenu = menuConfigs[role] || [];
 
     return (
         <Drawer
             variant="permanent"
             sx={{
-                width: drawerWidth,
+                width: 240,
                 flexShrink: 0,
-                [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+                [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
             }}
         >
             <Toolbar />
-            <Box sx={{ overflow: 'auto' }}>
-                <List>
-                    {menuItems.map((item) => (
-                        <ListItem key={item.text} disablePadding>
-                            <ListItemButton onClick={() => navigate(item.path)}>
-                                <ListItemIcon>{item.icon}</ListItemIcon>
-                                <ListItemText primary={item.text} />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
-            </Box>
+            <List>
+                {currentMenu.map((item) => (
+                    <ListItem key={item.text} disablePadding>
+                        <ListItemButton
+                            component={Link}
+                            to={item.path}
+                            selected={location.pathname === item.path}
+                        >
+                            <ListItemText primary={item.text} />
+                        </ListItemButton>
+                    </ListItem>
+                ))}
+            </List>
         </Drawer>
     );
 };
