@@ -22,6 +22,7 @@ import ServiceDashboard from './pages/ServiceDashboard';
 // Importurile pentru Admin
 import AdminDashboard from './pages/AdminDashboard'; // <-- ADAUGAT
 import AdminUserManagement from './pages/AdminUserManagement';
+import AdminDamageReports from './pages/AdminDamageReports';
 import Analytics from './pages/Analytics'; // <-- ASIGURA-TE CA AI IMPORTUL DACA EXISTA
 
 const DashboardRedirect = () => {
@@ -82,6 +83,7 @@ const App = () => {
                     <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                         <Route path="/admin-dashboard" element={<AdminDashboard />} />
                         <Route path="/admin-user-management" element={<AdminUserManagement />} />
+                        <Route path="/admin-reports" element={<AdminDamageReports />} />
                         <Route path="/analytics" element={<Analytics />} />
                     </Route>
                 </Route>

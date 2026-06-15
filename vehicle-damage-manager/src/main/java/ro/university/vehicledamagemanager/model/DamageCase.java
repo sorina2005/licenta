@@ -24,7 +24,7 @@ public class DamageCase {
 
     private LocalDateTime creationDate;
 
-    private String status; // Exemplu: PENDING, ANALYZING, COMPLETED
+    private String status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false)

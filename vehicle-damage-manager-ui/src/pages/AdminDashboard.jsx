@@ -12,12 +12,12 @@ const AdminDashboard = () => {
                     Panou de Administrare Sistem
                 </Typography>
                 <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-                    Gestionati conturile utilizatorilor si vizualizati statisticile globale ale platformei AutoDamage Hub.
+                    Gestionati conturile utilizatorilor, vizualizati dosarele de dauna si urmariti statisticile platformei AutoDamage Hub.
                 </Typography>
 
                 <Grid container spacing={3} sx={{ mt: 2 }}>
                     {/* Card Gestiune Utilizatori */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                         <Card elevation={3} sx={{ p: 2 }}>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                                 <Box sx={{ fontSize: 50, mb: 2 }}>👥</Box>
@@ -39,8 +39,31 @@ const AdminDashboard = () => {
                         </Card>
                     </Grid>
 
+                    {/* Card Gestiune Dosare Daune */}
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                        <Card elevation={3} sx={{ p: 2 }}>
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                                <Box sx={{ fontSize: 50, mb: 2 }}>📂</Box>
+                                <Typography variant="h5" component="div" fontWeight="medium" gutterBottom>
+                                    Gestiune Dosare
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary" sx={{ mb: 3, minHeight: 60 }}>
+                                    Vizualizati toate dosarele de daune introduse in sistem si urmariti starea lor impreuna cu datele clientilor.
+                                </Typography>
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    fullWidth
+                                    onClick={() => navigate('/admin-reports')}
+                                >
+                                    Vizualizati Dosarele
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
                     {/* Card Analitice */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                         <Card elevation={3} sx={{ p: 2 }}>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                                 <Box sx={{ fontSize: 50, mb: 2 }}>📊</Box>

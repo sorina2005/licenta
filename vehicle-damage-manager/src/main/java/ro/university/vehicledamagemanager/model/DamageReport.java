@@ -1,26 +1,42 @@
 package ro.university.vehicledamagemanager.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Table(name = "damage_reports")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class DamageReport {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT")
-    private String rawText;
+    @Column(name = "license_plate", nullable = false, length = 20)
+    private String licensePlate;
 
-    private String detectedParts;
-    private String location;
-    private String urgency;
-    private String intent;
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
-    @Column(columnDefinition = "TEXT")
-    private String aiResponseText;
+    @Column(name = "status", nullable = false, length = 30)
+    private String status = "IN_ASTEPTARE";
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
