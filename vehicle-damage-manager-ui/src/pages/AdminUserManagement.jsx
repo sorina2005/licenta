@@ -13,14 +13,15 @@ import LockIcon from '@mui/icons-material/Lock';
 import ShieldIcon from '@mui/icons-material/Shield';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import DescriptionIcon from '@mui/icons-material/Description';
+import SearchIcon from '@mui/icons-material/Search';
 import api from '../api/axios';
 
 const AdminUserManagement = () => {
     const [users, setUsers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [open, setOpen] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'CLIENT' });
 
-    // State-uri pentru modalul de vizualizare masini
     const [vehiclesOpen, setVehiclesOpen] = useState(false);
     const [vehicles, setVehicles] = useState([]);
     const [selectedUsername, setSelectedUsername] = useState('');
@@ -95,6 +96,11 @@ const AdminUserManagement = () => {
         window.open(`http://localhost:8080/api/admin/users/${userId}/report/pdf`, '_blank');
     };
 
+    const filteredUsers = users.filter(user =>
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <Box sx={{ p: 4, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
             {/* Antet Pagina */}
@@ -124,6 +130,24 @@ const AdminUserManagement = () => {
                 </Button>
             </Box>
 
+            {/* Bara de Cautare si Filtrare */}
+            <TextField
+                fullWidth
+                variant="outlined"
+                size="small"
+                placeholder="Cauta utilizator dupa nume sau email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{ mb: 3, maxWidth: 400, bgcolor: '#fff', borderRadius: '8px' }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <SearchIcon color="action" />
+                        </InputAdornment>
+                    ),
+                }}
+            />
+
             {/* Tabel Date */}
             <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #eef2f6', overflow: 'hidden' }}>
                 <Table>
@@ -137,7 +161,7 @@ const AdminUserManagement = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {users.map((u) => (
+                        {filteredUsers.map((u) => (
                             <TableRow
                                 key={u.id}
                                 hover

@@ -24,6 +24,7 @@ const MyVehicles = () => {
         vin: ''
     });
 
+
     // Functii pentru manipularea Dialog-ului
     const handleOpen = () => setOpen(true);
     const handleClose = () => {

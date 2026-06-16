@@ -23,7 +23,8 @@ import ServiceDashboard from './pages/ServiceDashboard';
 import AdminDashboard from './pages/AdminDashboard'; // <-- ADAUGAT
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDamageReports from './pages/AdminDamageReports';
-import Analytics from './pages/Analytics'; // <-- ASIGURA-TE CA AI IMPORTUL DACA EXISTA
+import Analytics from './pages/Analytics';
+import TrackRepair from "./pages/TrackRepair.jsx"; // <-- ASIGURA-TE CA AI IMPORTUL DACA EXISTA
 
 const DashboardRedirect = () => {
     const userJson = localStorage.getItem('user');
@@ -65,6 +66,7 @@ const App = () => {
                         <Route path="/report-damage" element={<ReportDamage />} />
                         <Route path="/my-vehicles" element={<MyVehicles />} />
                         <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/track-repair" element={<TrackRepair />} />
                     </Route>
 
                     <Route element={<ProtectedRoute allowedRoles={['INSPECTOR']} />}>
