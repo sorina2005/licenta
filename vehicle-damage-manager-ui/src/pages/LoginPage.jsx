@@ -29,19 +29,45 @@ const LoginPage = () => {
 
         try {
             const response = await api.post('/auth/login', credentials);
-            const user = response.data;
 
+            // Extragere flexibila a token-ului (suporta structuri de tipul { token, user } sau citirea din header)
+            const token = response.data.token || response.data.accessToken || response.headers['authorization']?.replace('Bearer ', '');
+
+            // Extragere flexibila a obiectului de utilizator
+            const user = response.data.user || response.data;
+
+            // Salvarea token-ului JWT in spatiul de stocare local pentru a fi utilizat de ProtectedRoute si interceptorul Axios
+            if (token) {
+                localStorage.setItem('token', token);
+            } else {
+                console.warn('Avertisment: Serverul nu a returnat un token JWT in corpul raspunsului.');
+            }
+
+            // Salvarea datelor utilizatorului curent
             localStorage.setItem('user', JSON.stringify(user));
 
-            if (user.role === 'ADMIN') {
+            // Normalizarea sirului de caractere pentru rol (eliminare prefix Spring Security daca exista)
+            const userRole = user.role ? user.role.replace('ROLE_', '').toUpperCase() : '';
+
+            // Algoritm de redirectionare dinamica bazat pe structura de securitate din App.jsx
+            if (userRole === 'ADMIN') {
                 navigate('/admin-dashboard');
-            } else if (user.role === 'INSPECTOR') {
+            } else if (userRole === 'INSPECTOR') {
                 navigate('/inspector-dashboard');
-            } else {
+            } else if (userRole === 'OPERATOR') {
+                navigate('/operator-dashboard');
+            } else if (userRole === 'SERVICE') {
+                navigate('/service-dashboard');
+            } else if (userRole === 'CLIENT') {
                 navigate('/client-dashboard');
+            } else {
+                setError('Rolul asociat acestui cont nu este configurat in sistem.');
             }
+
         } catch (err) {
-            setError('Nume utilizator sau parola incorecta!');
+            console.error('Eroare la executarea procedurii de login:', err);
+            const message = err.response?.data?.message || err.response?.data || 'Nume utilizator sau parola incorecta!';
+            setError(typeof message === 'string' ? message : 'Eroare de autentificare la nivelul serverului.');
         }
     };
 

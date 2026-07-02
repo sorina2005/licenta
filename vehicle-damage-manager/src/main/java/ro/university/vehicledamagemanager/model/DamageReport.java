@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "damage_reports")
@@ -35,8 +36,21 @@ public class DamageReport {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @OneToMany(mappedBy = "damageReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonManagedReference
+    private List<DamageImage> images = new java.util.ArrayList<>();
+
+    public List<DamageImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<DamageImage> images) {
+        this.images = images;
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
 }

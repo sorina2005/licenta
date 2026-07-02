@@ -23,12 +23,65 @@ const RegisterPage = () => {
         role: 'CLIENT'
     });
 
+    const [validationErrors, setValidationErrors] = useState({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
+
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
 
+    const validateField = (name, value, currentFormData) => {
+        let errorMsg = '';
+
+        if (name === 'username') {
+            if (!value.trim()) {
+                errorMsg = 'Numele de utilizator este obligatoriu.';
+            }
+        }
+
+        if (name === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!value) {
+                errorMsg = 'Adresa de email este obligatorie.';
+            } else if (!emailRegex.test(value)) {
+                errorMsg = 'Formatul emailului nu este valid (ex: exemplu@domeniu.com).';
+            }
+        }
+
+        if (name === 'password') {
+            if (!value) {
+                errorMsg = 'Parola este obligatorie.';
+            } else if (value.length < 6) {
+                errorMsg = 'Parola trebuie sa aiba cel putin 6 caractere.';
+            }
+
+            if (currentFormData.confirmPassword && value !== currentFormData.confirmPassword) {
+                setValidationErrors(prev => ({ ...prev, confirmPassword: 'Parolele introduse nu coincid.' }));
+            } else if (currentFormData.confirmPassword && value === currentFormData.confirmPassword) {
+                setValidationErrors(prev => ({ ...prev, confirmPassword: '' }));
+            }
+        }
+
+        if (name === 'confirmPassword') {
+            if (!value) {
+                errorMsg = 'Confirmarea parolei este obligatorie.';
+            } else if (value !== currentFormData.password) {
+                errorMsg = 'Parolele introduse nu coincid.';
+            }
+        }
+
+        setValidationErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    };
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        const updatedFormData = { ...formData, [name]: value };
+        setFormData(updatedFormData);
+        validateField(name, value, updatedFormData);
     };
 
     const handleSubmit = async (e) => {
@@ -36,13 +89,17 @@ const RegisterPage = () => {
         setError('');
         setSuccess(false);
 
-        if (formData.password !== formData.confirmPassword) {
-            setError('Parolele introduse nu coincid!');
-            return;
-        }
-
-        if (formData.password.length < 6) {
-            setError('Parola trebuie sa aiba cel putin 6 caractere!');
+        if (
+            validationErrors.username ||
+            validationErrors.email ||
+            validationErrors.password ||
+            validationErrors.confirmPassword ||
+            !formData.username ||
+            !formData.email ||
+            !formData.password ||
+            !formData.confirmPassword
+        ) {
+            setError('Va rugam sa corectati erorile inainte de finalizarea inregistrarii.');
             return;
         }
 
@@ -60,6 +117,16 @@ const RegisterPage = () => {
             setError(err.response?.data?.message || 'Eroare la inregistrare. Va rugam incercati din nou.');
         }
     };
+
+    const isFormInvalid =
+        Boolean(validationErrors.username) ||
+        Boolean(validationErrors.email) ||
+        Boolean(validationErrors.password) ||
+        Boolean(validationErrors.confirmPassword) ||
+        !formData.username ||
+        !formData.email ||
+        !formData.password ||
+        !formData.confirmPassword;
 
     return (
         <Box sx={{
@@ -142,6 +209,8 @@ const RegisterPage = () => {
                             autoFocus
                             value={formData.username}
                             onChange={handleChange}
+                            error={Boolean(validationErrors.username)}
+                            helperText={validationErrors.username}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                         />
                         <TextField
@@ -154,6 +223,8 @@ const RegisterPage = () => {
                             autoComplete="email"
                             value={formData.email}
                             onChange={handleChange}
+                            error={Boolean(validationErrors.email)}
+                            helperText={validationErrors.email}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                         />
                         <TextField
@@ -166,6 +237,8 @@ const RegisterPage = () => {
                             autoComplete="new-password"
                             value={formData.password}
                             onChange={handleChange}
+                            error={Boolean(validationErrors.password)}
+                            helperText={validationErrors.password}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                         />
                         <TextField
@@ -178,6 +251,8 @@ const RegisterPage = () => {
                             autoComplete="new-password"
                             value={formData.confirmPassword}
                             onChange={handleChange}
+                            error={Boolean(validationErrors.confirmPassword)}
+                            helperText={validationErrors.confirmPassword}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                         />
 
@@ -185,7 +260,7 @@ const RegisterPage = () => {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            disabled={success}
+                            disabled={isFormInvalid || success}
                             sx={{
                                 mt: 4,
                                 mb: 3,
