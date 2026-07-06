@@ -28,8 +28,28 @@ public class DashboardController {
 
     // Am eliminat @PreAuthorize pentru a permite accesul conform regulilor din SecurityConfig
     @GetMapping("/client/reports")
-    public ResponseEntity<?> getClientReports() {
-        return ResponseEntity.ok(damageReportRepository.findAll());
+    public ResponseEntity<?> getClientReports(@RequestParam(value = "username", required = false) String username) {
+        try {
+            if (username == null || username.trim().isEmpty()) {
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+
+            java.util.Optional<ro.university.vehicledamagemanager.model.User> userOpt = userRepository.findByUsername(username.trim());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+
+            Long loggedInUserId = userOpt.get().getId();
+
+            java.util.List<ro.university.vehicledamagemanager.model.DamageReport> filteredReports = damageReportRepository.findAll().stream()
+                    .filter(report -> report.getUser() != null && report.getUser().getId().equals(loggedInUserId))
+                    .toList();
+
+            return ResponseEntity.ok(filteredReports);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la filtrare: " + e.getMessage() + "\"}");
+        }
     }
 
     @GetMapping("/operator/unassigned")

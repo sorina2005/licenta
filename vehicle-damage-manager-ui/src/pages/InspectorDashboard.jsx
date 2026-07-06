@@ -157,6 +157,12 @@ const InspectorDashboard = () => {
                     </>
                 )}
             </Dialog>
+
+            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

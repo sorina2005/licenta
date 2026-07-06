@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, IconButton, Snackbar, Alert } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AddIcon from '@mui/icons-material/Add';
@@ -11,6 +11,14 @@ const ServiceDashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedReportId, setSelectedReportId] = useState(null);
     const [repairItems, setRepairItems] = useState([{ componentName: '', partPrice: 0, quantity: 1, laborPrice: 0 }]);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
+    };
 
     const fetchReports = () => {
         api.get('/admin/reports')
@@ -18,7 +26,10 @@ const ServiceDashboard = () => {
                 const filtered = res.data.filter(r => r.status === 'APROBAT' || r.status === 'IN_REPARATIE');
                 setReports(filtered);
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setSnackbar({ open: true, message: 'Eroare la preluarea dosarelor.', severity: 'error' });
+            });
     };
 
     useEffect(() => {
@@ -28,10 +39,13 @@ const ServiceDashboard = () => {
     const handleStartRepair = (id) => {
         api.put(`/admin/reports/${id}/status`, { status: 'IN_REPARATIE' })
             .then(() => {
-                alert('Reparatia a fost pornita.');
+                setSnackbar({ open: true, message: 'Reparatia a fost pornita.', severity: 'success' });
                 fetchReports();
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setSnackbar({ open: true, message: 'Eroare la actualizarea statusului.', severity: 'error' });
+            });
     };
 
     const handleOpenFinalize = (id) => {
@@ -77,11 +91,14 @@ const ServiceDashboard = () => {
     const handleSendDeviz = () => {
         api.post(`/admin/reports/${selectedReportId}/finalize`, repairItems)
             .then(() => {
-                alert('Devizul a fost inregistrat si dosarul finalizat.');
+                setSnackbar({ open: true, message: 'Devizul a fost inregistrat si dosarul finalizat.', severity: 'success' });
                 setIsModalOpen(false);
                 fetchReports();
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setSnackbar({ open: true, message: 'Eroare la finalizarea dosarului.', severity: 'error' });
+            });
     };
 
     return (
@@ -245,6 +262,12 @@ const ServiceDashboard = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow,
     Button, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent,
-    DialogActions, TextField, IconButton, Tooltip, Zoom, InputAdornment
+    DialogActions, TextField, IconButton, Tooltip, Zoom, InputAdornment, Snackbar, Alert
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
@@ -18,6 +18,7 @@ import api from '../api/axios';
 
 const AdminUserManagement = () => {
     const [users, setUsers] = useState([]);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [searchTerm, setSearchTerm] = useState('');
     const [open, setOpen] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'CLIENT' });
@@ -36,6 +37,13 @@ const AdminUserManagement = () => {
         fetchUsers();
     }, []);
 
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
+    };
+
     const handleRoleChangeLocal = (userId, newRole) => {
         setUsers(prevUsers =>
             prevUsers.map(u => (u.id === userId ? { ...u, role: newRole } : u))
@@ -45,12 +53,12 @@ const AdminUserManagement = () => {
     const handleSaveRole = (userId, updatedRole) => {
         api.put(`/admin/users/${userId}/role`, { role: updatedRole })
             .then(() => {
-                alert('Rolul a fost actualizat cu succes!');
+                setSnackbar({ open: true, message: 'Rolul a fost actualizat cu succes!', severity: 'success' });
                 fetchUsers();
             })
             .catch(err => {
                 const serverError = err.response?.data || 'Eroare la actualizarea rolului.';
-                alert(serverError);
+                setSnackbar({ open: true, message: typeof serverError === 'string' ? serverError : 'Eroare la server.', severity: 'error' });
             });
     };
 
@@ -58,24 +66,27 @@ const AdminUserManagement = () => {
         if (window.confirm('Sunteti sigur ca doriti sa stergeti acest utilizator?')) {
             api.delete(`/admin/users/${userId}`)
                 .then(() => {
-                    alert('Utilizator sters cu succes!');
+                    setSnackbar({ open: true, message: 'Utilizator sters cu succes!', severity: 'success' });
                     fetchUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+                    setSnackbar({ open: true, message: 'Eroare la stergerea utilizatorului.', severity: 'error' });
+                });
         }
     };
 
     const handleCreateUser = () => {
         api.post('/admin/users', newUser)
             .then(() => {
-                alert('Utilizator creat cu succes!');
+                setSnackbar({ open: true, message: 'Utilizator creat cu succes!', severity: 'success' });
                 setOpen(false);
                 setNewUser({ username: '', email: '', password: '', role: 'CLIENT' });
                 fetchUsers();
             })
             .catch(err => {
                 const serverError = err.response?.data || 'Eroare la crearea utilizatorului.';
-                alert(serverError);
+                setSnackbar({ open: true, message: typeof serverError === 'string' ? serverError : 'Eroare la crearea contului.', severity: 'error' });
             });
     };
 
@@ -87,7 +98,7 @@ const AdminUserManagement = () => {
                 setVehiclesOpen(true);
             })
             .catch(err => {
-                alert('Eroare la descarcarea listei de vehicule.');
+                setSnackbar({ open: true, message: 'Eroare la descarcarea listei de vehicule.', severity: 'error' });
                 console.error(err);
             });
     };
@@ -103,7 +114,6 @@ const AdminUserManagement = () => {
 
     return (
         <Box sx={{ p: 4, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
-            {/* Antet Pagina */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                 <Box>
                     <Typography variant="h4" fontWeight="800" sx={{ color: '#1a2035', letterSpacing: '-0.5px' }}>
@@ -130,7 +140,6 @@ const AdminUserManagement = () => {
                 </Button>
             </Box>
 
-            {/* Bara de Cautare si Filtrare */}
             <TextField
                 fullWidth
                 variant="outlined"
@@ -148,7 +157,6 @@ const AdminUserManagement = () => {
                 }}
             />
 
-            {/* Tabel Date */}
             <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #eef2f6', overflow: 'hidden' }}>
                 <Table>
                     <TableHead>
@@ -195,7 +203,6 @@ const AdminUserManagement = () => {
                                 </TableCell>
                                 <TableCell align="center">
                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        {/* Buton Salvare Rol */}
                                         <Tooltip title="Salveaza Modificarile" TransitionComponent={Zoom} arrow>
                                             <IconButton
                                                 color="primary"
@@ -207,10 +214,8 @@ const AdminUserManagement = () => {
                                             </IconButton>
                                         </Tooltip>
 
-                                        {/* Actiuni specifice exclusiv rolului de CLIENT */}
                                         {u.role === 'CLIENT' && (
                                             <>
-                                                {/* Buton Vizualizare Vehicule */}
                                                 <Tooltip title="Vizualizeaza Vehicule" TransitionComponent={Zoom} arrow>
                                                     <IconButton
                                                         color="info"
@@ -222,7 +227,6 @@ const AdminUserManagement = () => {
                                                     </IconButton>
                                                 </Tooltip>
 
-                                                {/* Buton Descarcare Raport PDF Per Client */}
                                                 <Tooltip title="Descarca Fisa Daune PDF" TransitionComponent={Zoom} arrow>
                                                     <IconButton
                                                         color="success"
@@ -236,7 +240,6 @@ const AdminUserManagement = () => {
                                             </>
                                         )}
 
-                                        {/* Buton Stergere Utilizator */}
                                         <Tooltip title="Sterge Utilizator" TransitionComponent={Zoom} arrow>
                                             <IconButton
                                                 color="error"
@@ -255,7 +258,6 @@ const AdminUserManagement = () => {
                 </Table>
             </Paper>
 
-            {/* Modal Creare Utilizator */}
             <Dialog
                 open={open}
                 onClose={() => setOpen(false)}
@@ -327,7 +329,6 @@ const AdminUserManagement = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Modal Vizualizare Masini Client */}
             <Dialog open={vehiclesOpen} onClose={() => setVehiclesOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
                 <DialogTitle sx={{ fontWeight: '800' }}>Autovehicule Inregistrate - {selectedUsername}</DialogTitle>
                 <DialogContent dividers>
@@ -360,6 +361,12 @@ const AdminUserManagement = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%', borderRadius: '8px' }} variant="filled">
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

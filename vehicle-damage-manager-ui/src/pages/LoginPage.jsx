@@ -7,7 +7,8 @@ import {
     TextField,
     Button,
     Alert,
-    Avatar
+    Avatar,
+    Snackbar
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -17,10 +18,18 @@ import api from '../api/axios';
 const LoginPage = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    };
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
     };
 
     const handleSubmit = async (e) => {
@@ -29,27 +38,20 @@ const LoginPage = () => {
 
         try {
             const response = await api.post('/auth/login', credentials);
-
-            // Extragere flexibila a token-ului (suporta structuri de tipul { token, user } sau citirea din header)
+            console.log("Ce trimite backend-ul la login:", response.data);
             const token = response.data.token || response.data.accessToken || response.headers['authorization']?.replace('Bearer ', '');
-
-            // Extragere flexibila a obiectului de utilizator
             const user = response.data.user || response.data;
 
-            // Salvarea token-ului JWT in spatiul de stocare local pentru a fi utilizat de ProtectedRoute si interceptorul Axios
             if (token) {
                 localStorage.setItem('token', token);
             } else {
                 console.warn('Avertisment: Serverul nu a returnat un token JWT in corpul raspunsului.');
             }
 
-            // Salvarea datelor utilizatorului curent
             localStorage.setItem('user', JSON.stringify(user));
 
-            // Normalizarea sirului de caractere pentru rol (eliminare prefix Spring Security daca exista)
             const userRole = user.role ? user.role.replace('ROLE_', '').toUpperCase() : '';
 
-            // Algoritm de redirectionare dinamica bazat pe structura de securitate din App.jsx
             if (userRole === 'ADMIN') {
                 navigate('/admin-dashboard');
             } else if (userRole === 'INSPECTOR') {
@@ -191,8 +193,22 @@ const LoginPage = () => {
                                 </Link>
                             </Typography>
                         </Box>
+
+                        <Box sx={{ textAlign: 'center', mt: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#616161' }}>
+                                Ai utitat parola?{' '}
+                                <Link to="/reset-password" style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 'bold' }}>
+                                    Reseteaza parola
+                                </Link>
+                            </Typography>
+                        </Box>
                     </Box>
                 </Paper>
+                <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                    <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </Container>
         </Box>
     );

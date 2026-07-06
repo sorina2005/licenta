@@ -2,20 +2,18 @@ import React, { useState } from 'react';
 import {
     Box, Typography, Button, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Chip, Dialog, DialogTitle,
-    DialogContent, DialogActions, TextField, IconButton
+    DialogContent, DialogActions, TextField, IconButton, Snackbar, Alert
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const MyVehicles = () => {
-    // Starea pentru lista de vehicule
     const [vehicles, setVehicles] = useState([
         { id: 1, brand: 'BMW', model: 'Seria 3', plate: 'B 123 ABC', vin: 'WBA1234567890' },
         { id: 2, brand: 'Audi', model: 'A4', plate: 'CJ 99 XYZ', vin: 'TRU0987654321' },
     ]);
 
-    // Starea pentru Modal (Dialog)
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({
         brand: '',
@@ -24,12 +22,20 @@ const MyVehicles = () => {
         vin: ''
     });
 
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    // Functii pentru manipularea Dialog-ului
     const handleOpen = () => setOpen(true);
+
     const handleClose = () => {
         setOpen(false);
         setFormData({ brand: '', model: '', plate: '', vin: '' });
+    };
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
     };
 
     const handleChange = (e) => {
@@ -42,11 +48,13 @@ const MyVehicles = () => {
             ...formData
         };
         setVehicles([...vehicles, newEntry]);
+        setSnackbar({ open: true, message: 'Vehicul adaugat cu succes!', severity: 'success' });
         handleClose();
     };
 
     const handleDelete = (id) => {
         setVehicles(vehicles.filter(v => v.id !== id));
+        setSnackbar({ open: true, message: 'Vehicul sters cu succes!', severity: 'success' });
     };
 
     return (
@@ -102,7 +110,6 @@ const MyVehicles = () => {
                 </Table>
             </TableContainer>
 
-            {/* Dialog pentru Adaugare Vehicul */}
             <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ fontWeight: 'bold' }}>Inregistrare Vehicul Nou</DialogTitle>
                 <DialogContent>
@@ -158,6 +165,12 @@ const MyVehicles = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

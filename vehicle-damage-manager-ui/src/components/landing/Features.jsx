@@ -41,41 +41,6 @@ const Features = () => {
                 </Box>
 
                 <Grid container spacing={4}>
-                    <Grid item xs={12} md={4}>
-                        <Card sx={{
-                            height: '100%',
-                            p: 4,
-                            borderRadius: 4,
-                            border: '1px solid #eef0f2',
-                            background: '#ffffff',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                transform: 'translateY(-8px)',
-                                boxShadow: '0 15px 35px rgba(25, 118, 210, 0.1)',
-                                borderColor: 'rgba(25, 118, 210, 0.2)'
-                            }
-                        }}>
-                            <Box sx={{
-                                display: 'inline-flex',
-                                p: 2,
-                                borderRadius: 3,
-                                bgcolor: 'rgba(25, 118, 210, 0.08)',
-                                color: '#1976d2',
-                                mb: 3
-                            }}>
-                                <ChatIcon sx={{ fontSize: 32 }} />
-                            </Box>
-                            <CardContent sx={{ p: 0 }}>
-                                <Typography variant="h5" fontWeight="700" mb={2} sx={{ color: '#1a1a1a' }}>
-                                    Asistent AI Chatbot
-                                </Typography>
-                                <Typography variant="body1" sx={{ color: '#616161', lineHeight: 1.6 }}>
-                                    Suport inteligent disponibil 24/7 pentru a ghida clientii in completarea declaratiilor fara erori.
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
 
                     <Grid item xs={12} md={4}>
                         <Card sx={{

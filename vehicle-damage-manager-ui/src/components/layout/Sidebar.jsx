@@ -11,6 +11,7 @@ const Sidebar = () => {
     const menuConfigs = {
         ADMIN: [
             { text: 'Gestiune Utilizatori', path: '/admin-user-management' },
+            { text: 'Gestiune Dosare', path: '/admin-reports' },
             { text: 'Analitice Sistem', path: '/analytics' }
         ],
         OPERATOR: [

@@ -1,18 +1,39 @@
 import React, { useState } from 'react';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, Grid, CircularProgress } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, Grid, CircularProgress, Snackbar, Alert, MenuItem } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import api from '../api/axios'; // <-- SCHIMBAT: Folosim instanta ta configurata cu interceptor JWT
+import api from '../api/axios';
 
-const steps = ['Identificare Vehicul', 'Incarcare Fotografii Daune', 'Detalii Suplimentare (AI Chat)'];
+const steps = ['Identificare Vehicul & Detalii', 'Incarcare Fotografii Daune'];
+
+const accidentTypes = [
+    { value: 'COLIZIUNE_TRAFIC', label: 'Coliziune in trafic cu alt vehicul' },
+    { value: 'DAUNA_PARCARE', label: 'Dauna gasita in parcare' },
+    { value: 'VANDALISM', label: 'Act de vandalism / Autor necunoscut' },
+    { value: 'IMPACT_OBSTACOL', label: 'Impact cu un obstacol fix (stalp, gard, copac)' },
+    { value: 'ALTELE', label: 'Alt tip de eveniment' }
+];
 
 const ReportDamage = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [plateNumber, setPlateNumber] = useState('');
     const [description, setDescription] = useState('');
+    const [city, setCity] = useState('');
+    const [county, setCounty] = useState('');
+    const [accidentDate, setAccidentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [accidentType, setAccidentType] = useState('COLIZIUNE_TRAFIC');
+
     const [reportId, setReportId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [imagePreviews, setImagePreviews] = useState([]);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
+    };
 
     const handleBack = () => setActiveStep((prev) => prev - 1);
 
@@ -25,20 +46,24 @@ const ReportDamage = () => {
 
         setLoading(true);
         try {
-            // Folosim api pentru ruta de procesare placuta
+            const token = localStorage.getItem('token');
             const response = await api.post('/client/process-plate', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
             });
 
             const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
             if (data.status === 'success') {
                 setPlateNumber(data.plate);
+                setSnackbar({ open: true, message: `Numar detectat: ${data.plate}`, severity: 'success' });
             } else {
-                alert('Nu s-a putut detecta numarul. Introduceti manual.');
+                setSnackbar({ open: true, message: 'Nu s-a putut detecta numarul. Introduceti manual.', severity: 'warning' });
             }
         } catch (error) {
             console.error('Eroare ALPR:', error);
-            alert('Eroare la comunicarea cu serverul ALPR.');
+            setSnackbar({ open: true, message: 'Eroare la comunicarea cu serverul ALPR.', severity: 'error' });
         } finally {
             setLoading(false);
         }
@@ -56,30 +81,42 @@ const ReportDamage = () => {
 
     const handleNext = async () => {
         if (activeStep === 0) {
-            if (!plateNumber) {
-                alert('Va rugam sa introduceti sau sa scanati numarul de inmatriculare.');
+            if (!plateNumber || !city || !county) {
+                setSnackbar({ open: true, message: 'Va rugam sa completati numarul, orasul si judetul.', severity: 'warning' });
                 return;
             }
             setLoading(true);
             try {
-                // IMPORTANT: Folosim api.post (care trimite automat si header-ul Authorization: Bearer ...)
-                const response = await api.post('/admin/reports', {
+                const savedUser = localStorage.getItem('user');
+                const loggedInUser = savedUser ? JSON.parse(savedUser) : null;
+
+                if (!loggedInUser || !loggedInUser.username) {
+                    setSnackbar({ open: true, message: 'Sesiune utilizator invalida. Va rugam sa va reautentificati.', severity: 'error' });
+                    return;
+                }
+
+                const descriereCompleta = `Tip accident: ${accidentType} | Locatie: ${city}, ${county} | Data: ${accidentDate} | Detalii: ${description || 'Nu sunt detalii suplimentare'}`;
+
+                const response = await api.post('/client/reports', {
+                    username: loggedInUser.username,
                     licensePlate: plateNumber,
-                    description: description || 'Dosar deschis prin asistent electronic',
+                    description: descriereCompleta, // <--- Trimitem textul unitar aici
                     status: 'IN_ASTEPTARE'
                 });
 
                 setReportId(response.data.id);
+                setSnackbar({ open: true, message: 'Dosar initiat cu succes!', severity: 'success' });
                 setActiveStep(1);
             } catch (error) {
                 console.error("Detalii eroare server:", error.response?.data || error.message);
-                alert(`Eroare la salvarea dosarului: ${error.response?.data?.message || 'Problema de autorizare sau structura baza de date.'}`);
+                const message = error.response?.data?.message || 'Problema de structura sau comunicare cu serverul.';
+                setSnackbar({ open: true, message: `Eroare la salvarea dosarului: ${message}`, severity: 'error' });
             } finally {
                 setLoading(false);
             }
         } else if (activeStep === 1) {
             if (selectedFiles.length === 0) {
-                alert('Va rugam sa adaugati cel putin o fotografie a avariilor.');
+                setSnackbar({ open: true, message: 'Va rugam sa adaugati cel putin o fotografie a avariilor.', severity: 'warning' });
                 return;
             }
             setLoading(true);
@@ -88,14 +125,14 @@ const ReportDamage = () => {
                 formData.append('files', file);
             });
             try {
-                // Folosim tot api pentru incarcarea securizata a imaginilor
-                await api.post(`/reports/${reportId}/upload-images`, formData, {
+                await api.post(`/client/reports/${reportId}/upload-images`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                setSnackbar({ open: true, message: 'Imagini incarcate cu succes!', severity: 'success' });
                 setActiveStep(2);
             } catch (error) {
                 console.error(error);
-                alert('Eroare la incarcarea fisierelor media pe server.');
+                setSnackbar({ open: true, message: 'Eroare la incarcarea fisierelor media pe server.', severity: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -108,66 +145,107 @@ const ReportDamage = () => {
         switch (step) {
             case 0:
                 return (
-                    <Box sx={{ mt: 3, textAlign: 'center' }}>
-                        <Typography variant="body1" mb={2}>Incarca o poza cu numarul de inmatriculare pentru identificare automata.</Typography>
-                        <Button variant="outlined" component="label" startIcon={<CloudUploadIcon />} disabled={loading}>
-                            {loading ? <CircularProgress size={24} /> : 'Incarca Poza Numar'}
-                            <input type="file" hidden onChange={handlePlateUpload} accept="image/*" />
-                        </Button>
-                        <TextField
-                            fullWidth
-                            label="Sau introdu manual numarul"
-                            sx={{ mt: 3 }}
-                            value={plateNumber}
-                            onChange={(e) => setPlateNumber(e.target.value)}
-                        />
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            label="Descriere sumara avarii"
-                            sx={{ mt: 2 }}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
+                    <Box sx={{ mt: 2 }}>
+                        <Typography variant="body1" mb={3} textAlign="center" color="text.secondary">
+                            Incarca o poza cu numarul de inmatriculare pentru identificare automata sau introdu datele manual.
+                        </Typography>
+
+                        <Box textAlign="center" mb={4}>
+                            <Button variant="outlined" component="label" startIcon={<CloudUploadIcon />} disabled={loading}>
+                                {loading ? <CircularProgress size={24} /> : 'Incarca Poza Numar'}
+                                <input type="file" hidden onChange={handlePlateUpload} accept="image/*" />
+                            </Button>
+                        </Box>
+
+                        {/* Container principal flexibil si aliniat perfect */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+                            <TextField
+                                required
+                                fullWidth
+                                label="Numar de inmatriculare autovehicul"
+                                value={plateNumber}
+                                onChange={(e) => setPlateNumber(e.target.value)}
+                            />
+
+                            {/* Randul 2: Judet si Oras */}
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                <TextField
+                                    required
+                                    fullWidth
+                                    label="Judet accident"
+                                    value={county}
+                                    onChange={(e) => setCounty(e.target.value)}
+                                />
+                                <TextField
+                                    required
+                                    fullWidth
+                                    label="Oras / Localitate accident"
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                />
+                            </Box>
+
+                            {/* Randul 3: Data si Tip accident */}
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                <TextField
+                                    fullWidth
+                                    label="Data producerii evenimentului"
+                                    type="date"
+                                    InputLabelProps={{ shrink: true }}
+                                    value={accidentDate}
+                                    onChange={(e) => setAccidentDate(e.target.value)}
+                                />
+                                <TextField
+                                    fullWidth
+                                    select
+                                    label="Tipul accidentului"
+                                    value={accidentType}
+                                    onChange={(e) => setAccidentType(e.target.value)}
+                                >
+                                    {accidentTypes.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Box>
+
+                            {/* Randul 4: Descriere */}
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                label="Descriere sumara a dinamicilor sau avariilor vizibile"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
+                        </Box>
                     </Box>
                 );
             case 1:
                 return (
                     <Box sx={{ mt: 3, textAlign: 'center' }}>
-                        <Typography variant="body1" mb={2}>Incarca fotografii detaliate cu partile avariate ale vehiculului.</Typography>
-                        <Grid container spacing={2} justifyContent="center">
+                        <Typography variant="body1" mb={3} color="text.secondary">Incarca fotografii detaliate cu partile avariate ale vehiculului.</Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
                             {imagePreviews.length > 0 ? (
                                 imagePreviews.map((url, index) => (
-                                    <Grid item xs={4} key={index}>
-                                        <Paper variant="outlined" sx={{ height: 100, overflow: 'hidden', borderRadius: '8px' }}>
-                                            <img src={url} alt={`Avarie ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        </Paper>
-                                    </Grid>
+                                    <Paper key={index} variant="outlined" sx={{ height: 120, overflow: 'hidden', borderRadius: '8px' }}>
+                                        <img src={url} alt={`Avarie ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </Paper>
                                 ))
                             ) : (
                                 [1, 2, 3].map((i) => (
-                                    <Grid item xs={4} key={i}>
-                                        <Paper variant="outlined" sx={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' }}>
-                                            Foto {i}
-                                        </Paper>
-                                    </Grid>
+                                    <Paper key={i} variant="outlined" sx={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', color: 'text.secondary' }}>
+                                        Foto {i}
+                                    </Paper>
                                 ))
                             )}
-                        </Grid>
-                        <Button variant="contained" component="label" sx={{ mt: 2 }} disabled={loading}>
+                        </Box>
+                        <Button variant="contained" component="label" startIcon={<CloudUploadIcon />} disabled={loading}>
                             Adauga Poze
                             <input type="file" multiple hidden accept="image/*" onChange={handleDamageFilesChange} />
                         </Button>
-                    </Box>
-                );
-            case 2:
-                return (
-                    <Box sx={{ mt: 3 }}>
-                        <Typography variant="body1">Asistentul AI te va ajuta sa completezi detaliile incidentului.</Typography>
-                        <Paper sx={{ p: 2, height: 200, bgcolor: '#f0f2f5', mt: 2, display: 'flex', alignItems: 'flex-end' }}>
-                            <Typography variant="caption" color="textSecondary">Interfata Chatbot va fi integrata aici...</Typography>
-                        </Paper>
                     </Box>
                 );
             default:
@@ -188,7 +266,7 @@ const ReportDamage = () => {
                     <Box textAlign="center">
                         <Typography variant="h5">Dosar trimis cu succes!</Typography>
                         <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>ID-ul dosarului dumneavoastra este #{reportId}</Typography>
-                        <Button onClick={() => { setActiveStep(0); setPlateNumber(''); setDescription(''); setSelectedFiles([]); setImagePreviews([]); setReportId(null); }} sx={{ mt: 2 }}>Incepe un dosar nou</Button>
+                        <Button onClick={() => { setActiveStep(0); setPlateNumber(''); setCity(''); setCounty(''); setDescription(''); setSelectedFiles(''); setImagePreviews([]); setReportId(null); }} sx={{ mt: 2 }}>Incepe un dosar nou</Button>
                     </Box>
                 ) : (
                     <>
@@ -196,12 +274,17 @@ const ReportDamage = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
                             <Button disabled={activeStep === 0 || loading} onClick={handleBack} sx={{ mr: 1 }}>Inapoi</Button>
                             <Button variant="contained" onClick={handleNext} disabled={loading}>
-                                {loading ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Finalizeaza' : 'Continua')}
+                                {loading ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Finalizeaza si Trimite' : 'Continua')}
                             </Button>
                         </Box>
                     </>
                 )}
             </Paper>
+            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

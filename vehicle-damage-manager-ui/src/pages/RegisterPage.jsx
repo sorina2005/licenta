@@ -7,7 +7,8 @@ import {
     Box,
     Paper,
     Alert,
-    Avatar
+    Avatar,
+    Snackbar
 } from '@mui/material';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -23,6 +24,8 @@ const RegisterPage = () => {
         role: 'CLIENT'
     });
 
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
     const [validationErrors, setValidationErrors] = useState({
         username: '',
         email: '',
@@ -33,6 +36,13 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbar({ ...snackbar, open: false });
+    };
 
     const validateField = (name, value, currentFormData) => {
         let errorMsg = '';
@@ -48,7 +58,7 @@ const RegisterPage = () => {
             if (!value) {
                 errorMsg = 'Adresa de email este obligatorie.';
             } else if (!emailRegex.test(value)) {
-                errorMsg = 'Formatul emailului nu este valid (ex: exemplu@domeniu.com).';
+                errorMsg = 'Formatul emailului nu este valid.';
             }
         }
 
@@ -100,6 +110,7 @@ const RegisterPage = () => {
             !formData.confirmPassword
         ) {
             setError('Va rugam sa corectati erorile inainte de finalizarea inregistrarii.');
+            setSnackbar({ open: true, message: 'Va rugam sa corectati erorile din formular.', severity: 'error' });
             return;
         }
 
@@ -108,13 +119,16 @@ const RegisterPage = () => {
 
             await api.post('/auth/register', dataToSend);
             setSuccess(true);
+            setSnackbar({ open: true, message: 'Cont creat cu succes! Redirectionare...', severity: 'success' });
 
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
 
         } catch (err) {
-            setError(err.response?.data?.message || 'Eroare la inregistrare. Va rugam incercati din nou.');
+            const errMsg = err.response?.data?.message || 'Eroare la inregistrare. Va rugam incercati din nou.';
+            setError(errMsg);
+            setSnackbar({ open: true, message: errMsg, severity: 'error' });
         }
     };
 
@@ -290,6 +304,11 @@ const RegisterPage = () => {
                         </Box>
                     </Box>
                 </Paper>
+                <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                    <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </Container>
         </Box>
     );

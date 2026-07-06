@@ -47,6 +47,9 @@ const Navbar = () => {
 
     const displayName = user?.username || "Utilizator";
 
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const isClient = storedUser?.role?.replace('ROLE_', '').toUpperCase() === 'CLIENT';
+
     // Componenta pentru meniul lateral (Mobile)
     const drawerContent = (
         <Box sx={{ width: 280, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -78,12 +81,14 @@ const Navbar = () => {
                                 <ListItemText primary="Dashboard" sx={{ '& .MuiTypography-root': { fontWeight: 600 } }} />
                             </ListItemButton>
                         </ListItem>
-                        <ListItem disablePadding>
-                            <ListItemButton component={Link} to="/profile" onClick={handleDrawerToggle}>
-                                <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-                                <ListItemText primary="Profilul meu" />
-                            </ListItemButton>
-                        </ListItem>
+                        {isClient && (
+                            <ListItem disablePadding>
+                                <ListItemButton component={Link} to="/profile" onClick={handleDrawerToggle}>
+                                    <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+                                    <ListItemText primary="Profilul meu" />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
                     </List>
                 ) : (
                     <List>

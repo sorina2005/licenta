@@ -10,6 +10,7 @@ import ro.university.vehicledamagemanager.model.User;
 import ro.university.vehicledamagemanager.repository.DamageReportRepository;
 import ro.university.vehicledamagemanager.repository.RepairItemRepository;
 import ro.university.vehicledamagemanager.repository.UserRepository;
+import ro.university.vehicledamagemanager.service.EmailService;
 
 import java.util.List;
 
@@ -56,22 +57,7 @@ public class AdminReportController {
             return ResponseEntity.status(500).body("{\"message\":\"Eroare la nivelul serverului: " + e.getMessage() + "\"}");
         }
     }
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateReportStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
-        try {
-            DamageReport report = damageReportRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
 
-            String newStatus = payload.get("status");
-            report.setStatus(newStatus);
-
-            damageReportRepository.save(report);
-            return ResponseEntity.ok().body("{\"message\":\"Status actualizat cu succes!\"}");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("{\"message\":\"Eroare la actualizarea statusului: " + e.getMessage() + "\"}");
-        }
-    }
     @GetMapping("/{id}")
     public ResponseEntity<?> getReportById(@PathVariable Long id) {
         try {
@@ -153,6 +139,35 @@ public class AdminReportController {
             return ResponseEntity.ok().body("{\"message\":\"Devizul a fost salvat si reparatia finalizata!\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"message\":\"Eroare la finalizarea reparatiei: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @Autowired
+    private EmailService emailService;
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateReportStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        try {
+            DamageReport report = damageReportRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
+
+            String newStatus = payload.get("status");
+            report.setStatus(newStatus);
+
+            damageReportRepository.save(report);
+
+            if (report.getUser() != null && report.getUser().getEmail() != null) {
+                emailService.sendStatusEmail(
+                        report.getUser().getEmail(),
+                        report.getId(),
+                        report.getLicensePlate(),
+                        newStatus
+                );
+            }
+
+            return ResponseEntity.ok().body("{\"message\":\"Status actualizat si email trimis!\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare: " + e.getMessage() + "\"}");
         }
     }
 }

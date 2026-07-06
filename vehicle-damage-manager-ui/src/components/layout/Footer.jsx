@@ -90,7 +90,7 @@ const Footer = () => {
                         &copy; {currentYear} AutoDamage Hub. Toate drepturile rezervate.
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748b', fontWeight: '500' }}>
-                        Proiect Licenta - Universitatea [Numele Tau]
+                        Proiect licenta - Cioabnu Sorina
                     </Typography>
                 </Box>
             </Container>

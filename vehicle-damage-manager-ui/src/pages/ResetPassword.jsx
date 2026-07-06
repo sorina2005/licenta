@@ -10,8 +10,13 @@ const ResetPassword = () => {
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
+
+    // 1. Initializăm eroarea direct la crearea stării dacă lipsește token-ul
+    const [error, setError] = useState(!token ? 'Acces neautorizat. Link-ul de resetare este invalid sau lipseste token-ul.' : '');
     const [success, setSuccess] = useState(false);
+
+    // 2. Calculăm starea direct din valoarea token-ului (Stare Derivată - Fără useState/useEffect)
+    const isTokenPresent = Boolean(token);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,29 +43,32 @@ const ResetPassword = () => {
                     <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">Introdu noua parola</Typography>
                     {success && <Alert severity="success" sx={{ mb: 2 }}>Parola schimbata! Redirectionare la login...</Alert>}
                     {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                    <form onSubmit={handleSubmit}>
-                        <TextField
-                            fullWidth
-                            required
-                            type="password"
-                            label="Noua Parola"
-                            margin="normal"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <TextField
-                            fullWidth
-                            required
-                            type="password"
-                            label="Confirma Noua Parola"
-                            margin="normal"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                        <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, py: 1.5 }} disabled={success}>
-                            Actualizeaza Parola
-                        </Button>
-                    </form>
+
+                    {isTokenPresent && (
+                        <form onSubmit={handleSubmit}>
+                            <TextField
+                                fullWidth
+                                required
+                                type="password"
+                                label="Noua Parola"
+                                margin="normal"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <TextField
+                                fullWidth
+                                required
+                                type="password"
+                                label="Confirma Noua Parola"
+                                margin="normal"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, py: 1.5 }} disabled={success}>
+                                Actualizeaza Parola
+                            </Button>
+                        </form>
+                    )}
                 </Paper>
             </Box>
         </Container>
@@ -68,5 +76,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-
-//todo reset password sa functioneze doar in cazul in care userul are token-ul

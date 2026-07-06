@@ -44,7 +44,7 @@ const Hero = () => {
                         }}>
                             <AssessmentIcon sx={{ fontSize: '1rem', mr: 1 }} />
                             <Typography variant="caption" fontWeight="bold" textTransform="uppercase" letterSpacing={1}>
-                                Platforma Enterprise v2.0
+                                Platforma Enterprise
                             </Typography>
                         </Box>
 
@@ -72,7 +72,6 @@ const Hero = () => {
                             variant="h5"
                             sx={{ color: '#616161', mb: 5, fontWeight: 400, lineHeight: 1.7, maxWidth: '600px' }}
                         >
-                            Automatizeaza complet fluxul de constatare utilizand module avansate de AI si OCR.
                             Centralizeaza comunicarea intre Client, Inspector si Service intr-un ecosistem digital securizat.
                         </Typography>
 
@@ -100,25 +99,7 @@ const Hero = () => {
                             >
                                 Incepe Acum
                             </Button>
-                            <Button
-                                variant="outlined"
-                                size="large"
-                                sx={{
-                                    px: 5,
-                                    py: 1.8,
-                                    borderRadius: 3,
-                                    textTransform: 'none',
-                                    fontSize: '1.1rem',
-                                    color: '#333',
-                                    borderColor: '#ccc',
-                                    '&:hover': {
-                                        borderColor: '#333',
-                                        bgcolor: 'rgba(0,0,0,0.02)'
-                                    }
-                                }}
-                            >
-                                Vezi Demo
-                            </Button>
+
                         </Stack>
                     </Grid>
 

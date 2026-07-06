@@ -12,15 +12,16 @@ import ro.university.vehicledamagemanager.repository.DamageImageRepository;
 import ro.university.vehicledamagemanager.repository.DamageReportRepository;
 import ro.university.vehicledamagemanager.repository.UserRepository;
 
-import java.io.File;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/api/client/reports")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class DamageReportController {
 
@@ -32,8 +33,6 @@ public class DamageReportController {
 
     @Autowired
     private UserRepository userRepository;
-
-    private final String UPLOAD_DIR = "uploads/";
 
     @PostMapping("/{id}/upload-images")
     public ResponseEntity<?> uploadImages(@PathVariable Long id, @RequestParam("files") MultipartFile[] files) {
@@ -94,32 +93,37 @@ public class DamageReportController {
         }
     }
 
-    @PostMapping("/api/admin/reports")
-    public ResponseEntity<?> createReport(@RequestBody DamageReport report) {
+    @PostMapping
+    public ResponseEntity<?> createReport(@RequestBody Map<String, Object> payload) {
         try {
-            // 1. Extragem automat username-ul din token-ul JWT trimis în Header
-            String currentUsername = org.springframework.security.core.context.SecurityContextHolder
-                    .getContext().getAuthentication().getName();
-
-            // 2. Căutăm utilizatorul în baza de date
-            User user = userRepository.findByUsername(currentUsername)
-                    .orElseThrow(() -> new RuntimeException("Utilizatorul curent nu a fost găsit în sistem."));
-
-            // 3. Legăm dosarul de acest utilizator (rezolvă eroarea de Foreign Key)
-            report.setUser(user);
-
-            // 4. Forțăm starea inițială corectă, în caz că lipsește din frontend
-            if (report.getStatus() == null) {
-                report.setStatus("IN_ASTEPTARE");
+            String username = (String) payload.get("username");
+            if (username == null || username.isEmpty()) {
+                return ResponseEntity.badRequest().body("{\"message\":\"Username-ul lipseste din cerere.\"}");
             }
 
-            // 5. Salvarea persistentă în MySQL
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Utilizatorul nu a fost gasit."));
+
+            DamageReport report = new DamageReport();
+
+            // Mapăm numărul de înmatriculare trimis din frontend
+            if (payload.containsKey("licensePlate")) {
+                report.setLicensePlate((String) payload.get("licensePlate"));
+            } else {
+                return ResponseEntity.badRequest().body("{\"message\":\"Numarul de inmatriculare (licensePlate) lipseste din cerere.\"}");
+            }
+
+            report.setDescription(payload.containsKey("description") ? (String) payload.get("description") : "Dosar deschis prin asistent electronic");
+            report.setStatus(payload.containsKey("status") ? (String) payload.get("status") : "IN_ASTEPTARE");
+            report.setUser(user);
+
             DamageReport savedReport = damageReportRepository.save(report);
             return ResponseEntity.ok(savedReport);
-
         } catch (Exception e) {
-            e.printStackTrace(); // Vei vedea detaliile complete în consola IntelliJ
+            e.printStackTrace();
             return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvare pe server: " + e.getMessage() + "\"}");
         }
     }
+
+
 }
