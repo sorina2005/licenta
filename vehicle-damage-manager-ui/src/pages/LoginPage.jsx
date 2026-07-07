@@ -38,19 +38,24 @@ const LoginPage = () => {
 
         try {
             const response = await api.post('/auth/login', credentials);
-            console.log("Ce trimite backend-ul la login:", response.data);
-            const token = response.data.token || response.data.accessToken || response.headers['authorization']?.replace('Bearer ', '');
-            const user = response.data.user || response.data;
+            const userToStore = response.data;
 
-            if (token) {
-                localStorage.setItem('token', token);
-            } else {
-                console.warn('Avertisment: Serverul nu a returnat un token JWT in corpul raspunsului.');
+            if (!userToStore || !userToStore.username) {
+                setError('Datele utilizatorului nu au putut fi preluate.');
+                return;
             }
 
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify(userToStore));
 
-            const userRole = user.role ? user.role.replace('ROLE_', '').toUpperCase() : '';
+            if (userToStore.email) {
+                localStorage.setItem('userId', userToStore.email);
+            } else if (userToStore.id) {
+                localStorage.setItem('userId', String(userToStore.id));
+            } else if (userToStore.username) {
+                localStorage.setItem('userId', userToStore.username);
+            }
+
+            const userRole = userToStore.role ? userToStore.role.replace('ROLE_', '').toUpperCase() : '';
 
             if (userRole === 'ADMIN') {
                 navigate('/admin-dashboard');
@@ -67,9 +72,8 @@ const LoginPage = () => {
             }
 
         } catch (err) {
-            console.error('Eroare la executarea procedurii de login:', err);
             const message = err.response?.data?.message || err.response?.data || 'Nume utilizator sau parola incorecta!';
-            setError(typeof message === 'string' ? message : 'Eroare de autentificare la nivelul serverului.');
+            setError(typeof message === 'string' ? message : 'Eroare de autentificare.');
         }
     };
 
@@ -196,8 +200,8 @@ const LoginPage = () => {
 
                         <Box sx={{ textAlign: 'center', mt: 1 }}>
                             <Typography variant="body2" sx={{ color: '#616161' }}>
-                                Ai utitat parola?{' '}
-                                <Link to="/reset-password" style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 'bold' }}>
+                                Ai uitat parola?{' '}
+                                <Link to="/forgot-password" style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 'bold' }}>
                                     Reseteaza parola
                                 </Link>
                             </Typography>

@@ -1,81 +1,91 @@
 package ro.university.vehicledamagemanager.controller;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ro.university.vehicledamagemanager.exception.UserNotFoundException;
+import ro.university.vehicledamagemanager.model.DamageReport;
+import ro.university.vehicledamagemanager.model.RepairItem;
+import ro.university.vehicledamagemanager.model.Role;
+import ro.university.vehicledamagemanager.model.User;
 import ro.university.vehicledamagemanager.repository.DamageReportRepository;
+import ro.university.vehicledamagemanager.repository.RepairItemRepository;
 import ro.university.vehicledamagemanager.repository.UserRepository;
-
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class DashboardController {
 
     private final DamageReportRepository damageReportRepository;
     private final UserRepository userRepository;
+    private final RepairItemRepository repairItemRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DashboardController(DamageReportRepository damageReportRepository, UserRepository userRepository) {
+    @Autowired
+    public DashboardController(DamageReportRepository damageReportRepository,
+                               UserRepository userRepository,
+                               RepairItemRepository repairItemRepository,
+                               PasswordEncoder passwordEncoder) {
         this.damageReportRepository = damageReportRepository;
         this.userRepository = userRepository;
+        this.repairItemRepository = repairItemRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // Am eliminat @PreAuthorize pentru a permite accesul conform regulilor din SecurityConfig
+    // client-facing endpoints
+
+    // get all reports for the authenticated client
     @GetMapping("/client/reports")
-    public ResponseEntity<?> getClientReports(@RequestParam(value = "username", required = false) String username) {
+    public ResponseEntity<?> getClientReports(Principal principal) {
         try {
-            if (username == null || username.trim().isEmpty()) {
-                return ResponseEntity.ok(java.util.Collections.emptyList());
+            if (principal == null || principal.getName().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"message\":\"User not authenticated.\"}");
             }
+            String username = principal.getName();
 
-            java.util.Optional<ro.university.vehicledamagemanager.model.User> userOpt = userRepository.findByUsername(username.trim());
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.ok(java.util.Collections.emptyList());
-            }
+            var user = userRepository
+                    .findByUsernameOrEmail(username)
+                    .orElseThrow(() -> new UserNotFoundException(
+                            "Utilizatorul cu username/email '" + username + "' nu exista."));
 
-            Long loggedInUserId = userOpt.get().getId();
+            Long userId = user.getId();
+            var userReports = damageReportRepository.findByUserId(userId);
+            return ResponseEntity.ok(userReports);
 
-            java.util.List<ro.university.vehicledamagemanager.model.DamageReport> filteredReports = damageReportRepository.findAll().stream()
-                    .filter(report -> report.getUser() != null && report.getUser().getId().equals(loggedInUserId))
-                    .toList();
-
-            return ResponseEntity.ok(filteredReports);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(404)
+                    .body("{\"message\":\"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("{\"message\":\"Eroare la filtrare: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(500)
+                    .body("{\"message\":\"Eroare la extragerea dosarelor: " + e.getMessage() + "\"}");
         }
     }
 
-    @GetMapping("/operator/unassigned")
-    public ResponseEntity<?> getUnassignedReports() {
-        return ResponseEntity.ok(damageReportRepository.findAll());
-    }
-
-    @GetMapping("/inspector/cases")
-    public ResponseEntity<?> getInspectorCases() {
-        return ResponseEntity.ok(damageReportRepository.findAll());
-    }
-
-    @GetMapping("/service/approved-cases")
-    public ResponseEntity<?> getApprovedCasesForService() {
-        return ResponseEntity.ok(damageReportRepository.findAll());
-    }
-
-    @GetMapping("/admin/users")
-    public ResponseEntity<?> getAllUsers() {
-        try {
-            return ResponseEntity.ok(userRepository.findAll());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Eroare la accesarea bazei de date: " + e.getMessage());
-        }
-    }
-
+    // process license plate image using python script
     @PostMapping("/client/process-plate")
     public ResponseEntity<?> processPlate(@RequestParam("file") MultipartFile file) {
         try {
@@ -126,13 +136,66 @@ public class DashboardController {
         }
     }
 
+    // role-specific data retrieval endpoints
+
+    // get unassigned reports for operators
+    @GetMapping("/operator/unassigned")
+    public ResponseEntity<?> getUnassignedReports() {
+        // returns all reports for now
+        return ResponseEntity.ok(damageReportRepository.findAll());
+    }
+
+    // get cases for inspectors
+    @GetMapping("/inspector/cases")
+    public ResponseEntity<?> getInspectorCases() {
+        // returns all reports for now
+        return ResponseEntity.ok(damageReportRepository.findAll());
+    }
+
+    // get approved cases for service centers
+    @GetMapping("/service/approved-cases")
+    public ResponseEntity<?> getApprovedCasesForService() {
+        // returns all reports for now
+        return ResponseEntity.ok(damageReportRepository.findAll());
+    }
+
+    // admin user management endpoints
+
+    // get all registered users
+    @GetMapping("/admin/users")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            return ResponseEntity.ok(userRepository.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Eroare la accesarea bazei de date: " + e.getMessage());
+        }
+    }
+
+    // create a new user
+    @PostMapping("/admin/users")
+    public ResponseEntity<?> createByAdmin(@RequestBody Map<String, String> request) {
+        try {
+            User user = new User();
+            user.setUsername(request.get("username"));
+            user.setEmail(request.get("email"));
+            user.setPassword(passwordEncoder.encode(request.get("password")));
+            user.setRole(Role.valueOf(request.get("role").toUpperCase()));
+
+            userRepository.save(user);
+            return ResponseEntity.ok().body("{\"status\":\"success\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Eroare la crearea utilizatorului: " + e.getMessage());
+        }
+    }
+
+    // update a user role
     @PutMapping("/admin/users/{id}/role")
-    public ResponseEntity<?> updateUserRole(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+    public ResponseEntity<?> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String roleValue = request.get("role");
             return userRepository.findById(id)
                     .map(user -> {
-                        user.setRole(com.example.vehicledamagemanager.model.Role.valueOf(roleValue.toUpperCase()));
+                        user.setRole(Role.valueOf(roleValue.toUpperCase()));
                         userRepository.save(user);
                         return ResponseEntity.ok().body("{\"status\":\"success\"}");
                     })
@@ -144,25 +207,7 @@ public class DashboardController {
         }
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
-
-    @PostMapping("/admin/users")
-    public ResponseEntity<?> createByAdmin(@RequestBody java.util.Map<String, String> request) {
-        try {
-            ro.university.vehicledamagemanager.model.User user = new ro.university.vehicledamagemanager.model.User();
-            user.setUsername(request.get("username"));
-            user.setEmail(request.get("email"));
-            user.setPassword(passwordEncoder.encode(request.get("password")));
-            user.setRole(com.example.vehicledamagemanager.model.Role.valueOf(request.get("role").toUpperCase()));
-
-            userRepository.save(user);
-            return ResponseEntity.ok().body("{\"status\":\"success\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Eroare la crearea utilizatorului: " + e.getMessage());
-        }
-    }
-
+    // delete a user by id
     @DeleteMapping("/admin/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         if (userRepository.existsById(id)) {
@@ -172,6 +217,9 @@ public class DashboardController {
         return ResponseEntity.notFound().build();
     }
 
+    // admin report management endpoints
+
+    // get all damage reports
     @GetMapping("/admin/reports")
     public ResponseEntity<?> getAllReportsForAdmin() {
         try {
@@ -181,44 +229,115 @@ public class DashboardController {
         }
     }
 
+//    // update report status
+//    @PutMapping("/admin/reports/{id}/status")
+//    public ResponseEntity<?> updateReportStatus(
+//            @PathVariable Long id,
+//            @RequestBody Map<String, String> request) {
+//        try {
+//            String newStatus = request.get("status");
+//            if (newStatus == null || newStatus.isEmpty()) {
+//                return ResponseEntity.badRequest().body("Statusul transmis este invalid.");
+//            }
+//
+//            return damageReportRepository.findById(id)
+//                    .map(report -> {
+//                        report.setStatus(newStatus.toUpperCase());
+//                        damageReportRepository.save(report);
+//                        return ResponseEntity.ok().body("{\"message\":\"Status actualizat cu succes!\"}");
+//                    })
+//                    .orElse(ResponseEntity.status(404).body("Dosarul de dauna cu ID-ul " + id + " nu a fost gasit."));
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(500).body("Eroare la actualizarea statusului: " + e.getMessage());
+//        }
+//    }
+
+    // log repair items and finalize report status
+    @PutMapping("/admin/reports/{id}/finalize-repair")
+    public ResponseEntity<?> finalizeRepair(@PathVariable Long id, @RequestBody List<RepairItem> items) {
+        try {
+            Optional<DamageReport> reportOptional = damageReportRepository.findById(id);
+            if (reportOptional.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            DamageReport report = reportOptional.get();
+
+            for (RepairItem item : items) {
+                item.setDamageReport(report);
+                repairItemRepository.save(item);
+            }
+
+            report.setStatus("REPARATIE_EFECTUATA");
+            damageReportRepository.save(report);
+
+            return ResponseEntity.ok("{\"message\":\"Devizul a fost inregistrat.\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvarea devizului.\"}");
+        }
+    }
+
+    // close report permanently
+    @PutMapping("/admin/reports/{id}/close-file")
+    public ResponseEntity<?> closeFile(@PathVariable Long id) {
+        try {
+            Optional<DamageReport> reportOptional = damageReportRepository.findById(id);
+            if (reportOptional.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            DamageReport report = reportOptional.get();
+            report.setStatus("FINALIZAT");
+            damageReportRepository.save(report);
+
+            return ResponseEntity.ok("{\"message\":\"Dosarul a fost inchis definitiv.\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la inchiderea dosarului.\"}");
+        }
+    }
+
+    // admin pdf export endpoints
+
+    // export all reports to pdf
     @GetMapping("/admin/reports/export/pdf")
-    public void exportToPDF(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+    public void exportToPDF(HttpServletResponse response) throws IOException {
         response.setContentType("application/pdf");
         String headerKey = "Content-Disposition";
         String headerValue = "attachment; filename=raport_global_daune.pdf";
         response.setHeader(headerKey, headerValue);
 
-        // Creare document A4
-        com.lowagie.text.Document document = new com.lowagie.text.Document(com.lowagie.text.PageSize.A4);
-        com.lowagie.text.pdf.PdfWriter.getInstance(document, response.getOutputStream());
+        // create a4 document
+        Document document = new Document(PageSize.A4);
+        PdfWriter.getInstance(document, response.getOutputStream());
 
         document.open();
 
-        // Titlu Raport
-        com.lowagie.text.Font fontTitle = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD);
+        // report title
+        Font fontTitle = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD);
         fontTitle.setSize(18);
-        com.lowagie.text.Paragraph titleParagraph = new com.lowagie.text.Paragraph("Raport Global Dosare Daune - AutoDamage Hub", fontTitle);
-        titleParagraph.setAlignment(com.lowagie.text.Paragraph.ALIGN_CENTER);
+        Paragraph titleParagraph = new Paragraph("Raport Global Dosare Daune - AutoDamage Hub", fontTitle);
+        titleParagraph.setAlignment(Paragraph.ALIGN_CENTER);
         document.add(titleParagraph);
 
-        // Spaciere
-        document.add(new com.lowagie.text.Paragraph(" "));
+        // spacer
+        document.add(new Paragraph(" "));
 
-        // Creare tabel cu 5 coloane
-        com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(5);
+        // create table with 5 columns
+        PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
-        table.setWidths(new float[] {1.0f, 2.0f, 4.0f, 2.0f, 2.0f});
+        table.setWidths(new float[]{1.0f, 2.0f, 4.0f, 2.0f, 2.0f});
 
-        // Header Tabel
+        // table header
         table.addCell("ID");
         table.addCell("Inmatriculare");
         table.addCell("Descriere Incident");
         table.addCell("Status");
         table.addCell("Client");
 
-        // Populare tabel din baza de date
-        java.util.List<ro.university.vehicledamagemanager.model.DamageReport> reports = damageReportRepository.findAll();
-        for (ro.university.vehicledamagemanager.model.DamageReport r : reports) {
+        // populate table from database
+        List<DamageReport> reports = damageReportRepository.findAll();
+        for (DamageReport r : reports) {
             table.addCell(String.valueOf(r.getId()));
             table.addCell(r.getLicensePlate());
             table.addCell(r.getDescription() != null ? r.getDescription() : "Fara descriere");
@@ -230,112 +349,87 @@ public class DashboardController {
         document.close();
     }
 
-    @PutMapping("/api/admin/reports/{id}/status")
-    public ResponseEntity<?> updateReportStatus(
-            @PathVariable Long id,
-            @RequestBody java.util.Map<String, String> request) {
-        try {
-            String newStatus = request.get("status");
-            if (newStatus == null || newStatus.isEmpty()) {
-                return ResponseEntity.badRequest().body("Statusul transmis este invalid.");
-            }
-
-            return damageReportRepository.findById(id)
-                    .map(report -> {
-                        report.setStatus(newStatus.toUpperCase());
-                        damageReportRepository.save(report);
-                        return ResponseEntity.ok().body("{\"message\":\"Status actualizat cu succes!\"}");
-                    })
-                    .orElse(ResponseEntity.status(404).body("Dosarul de dauna cu ID-ul " + id + " nu a fost gasit."));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Eroare la actualizarea statusului: " + e.getMessage());
-        }
-    }
-
+    // export specific user history to pdf
     @GetMapping("/admin/users/{userId}/report/pdf")
-    public void exportUserReportToPDF(@PathVariable Long userId, jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+    public void exportUserReportToPDF(@PathVariable Long userId, HttpServletResponse response) throws IOException {
         response.setContentType("application/pdf");
         String headerKey = "Content-Disposition";
         String headerValue = "attachment; filename=fisa_daune_client_" + userId + ".pdf";
         response.setHeader(headerKey, headerValue);
 
-        // Cautare utilizator in baza de date
-        ro.university.vehicledamagemanager.model.User user = userRepository.findById(userId).orElse(null);
+        // find user in database
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             response.sendError(404, "Utilizatorul nu a fost gasit.");
             return;
         }
 
-        com.lowagie.text.Document document = new com.lowagie.text.Document(com.lowagie.text.PageSize.A4);
-        com.lowagie.text.pdf.PdfWriter.getInstance(document, response.getOutputStream());
+        Document document = new Document(PageSize.A4);
+        PdfWriter.getInstance(document, response.getOutputStream());
 
         document.open();
 
-        // Configurare Fonturi pentru aspect profesional
-        com.lowagie.text.Font fontTitle = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 16);
-        com.lowagie.text.Font fontSection = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 12);
-        com.lowagie.text.Font fontBody = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA, 10);
-        com.lowagie.text.Font fontTableHeader = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 10);
+        // configure fonts
+        Font fontTitle = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 16);
+        Font fontSection = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 12);
+        Font fontBody = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA, 10);
+        Font fontTableHeader = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 10);
 
-        // Antet Raport
-        com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph("AUTODAMAGE HUB - FISA DE DAUNALITATE CLIENT", fontTitle);
-        title.setAlignment(com.lowagie.text.Paragraph.ALIGN_CENTER);
+        // report header
+        Paragraph title = new Paragraph("AUTODAMAGE HUB - FISA DE DAUNALITATE CLIENT", fontTitle);
+        title.setAlignment(Paragraph.ALIGN_CENTER);
         document.add(title);
 
-        document.add(new com.lowagie.text.Paragraph("------------------------------------------------------------------------------------------------------------------------"));
-        document.add(new com.lowagie.text.Paragraph(" "));
+        document.add(new Paragraph("------------------------------------------------------------------------------------------------------------------------"));
+        document.add(new Paragraph(" "));
 
-        // Sectiunea 1: Date Client
-        document.add(new com.lowagie.text.Paragraph("1. DATE IDENTIFICARE ASIGURAT / CLIENT", fontSection));
-        document.add(new com.lowagie.text.Paragraph("ID Client: " + user.getId(), fontBody));
-        document.add(new com.lowagie.text.Paragraph("Nume Utilizator: " + user.getUsername(), fontBody));
-        document.add(new com.lowagie.text.Paragraph("Adresa de Email: " + user.getEmail(), fontBody));
-        document.add(new com.lowagie.text.Paragraph("Data Emitere Document: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")), fontBody));
+        // section 1: client data
+        document.add(new Paragraph("1. DATE IDENTIFICARE ASIGURAT / CLIENT", fontSection));
+        document.add(new Paragraph("ID Client: " + user.getId(), fontBody));
+        document.add(new Paragraph("Nume Utilizator: " + user.getUsername(), fontBody));
+        document.add(new Paragraph("Adresa de Email: " + user.getEmail(), fontBody));
+        document.add(new Paragraph("Data Emitere Document: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")), fontBody));
 
-        document.add(new com.lowagie.text.Paragraph(" "));
+        document.add(new Paragraph(" "));
 
-        // Sectiunea 2: Istoric Dosare si Reparatii Executate
-        document.add(new com.lowagie.text.Paragraph("2. ISTORIC DOSARE REPARATII SI DAUNE ASOCIATE", fontSection));
-        document.add(new com.lowagie.text.Paragraph(" "));
+        // section 2: history of reports and repairs
+        document.add(new Paragraph("2. ISTORIC DOSARE REPARATII SI DAUNE ASOCIATE", fontSection));
+        document.add(new Paragraph(" "));
 
-        // Creare tabel cu dimensiuni fixe pentru coloane
-        com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(4);
+        // create table with fixed widths
+        PdfPTable table = new PdfPTable(4);
         table.setWidthPercentage(100);
-        table.setWidths(new float[] {1.0f, 2.0f, 5.0f, 2.0f});
+        table.setWidths(new float[]{1.0f, 2.0f, 5.0f, 2.0f});
 
-        // Celule Header Tabel
-        table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph("ID Dosar", fontTableHeader)));
-        table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph("Numar Auto", fontTableHeader)));
-        table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph("Descriere Avarii si Reparatii Efectuate", fontTableHeader)));
-        table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph("Status Curent", fontTableHeader)));
+        // table header cells
+        table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph("ID Dosar", fontTableHeader)));
+        table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph("Numar Auto", fontTableHeader)));
+        table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph("Descriere Avarii si Reparatii Efectuate", fontTableHeader)));
+        table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph("Status Curent", fontTableHeader)));
 
-        // Filtrare dosare specifice utilizatorului selectat
-        java.util.List<ro.university.vehicledamagemanager.model.DamageReport> allReports = damageReportRepository.findAll();
-        java.util.List<ro.university.vehicledamagemanager.model.DamageReport> userReports = allReports.stream()
-                .filter(r -> r.getUser() != null && r.getUser().getId().equals(userId))
-                .toList();
+        // filter reports for the selected user
+        List<DamageReport> userReports = damageReportRepository.findByUserId(userId);
 
         if (userReports.isEmpty()) {
-            com.lowagie.text.pdf.PdfPCell emptyCell = new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph("Nu exista dosare inregistrate pentru acest client.", fontBody));
+            com.lowagie.text.pdf.PdfPCell emptyCell = new com.lowagie.text.pdf.PdfPCell(new Paragraph("Nu exista dosare inregistrate pentru acest client.", fontBody));
             emptyCell.setColspan(4);
             emptyCell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
             table.addCell(emptyCell);
         } else {
-            for (ro.university.vehicledamagemanager.model.DamageReport r : userReports) {
-                table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph(String.valueOf(r.getId()), fontBody)));
-                table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph(r.getLicensePlate(), fontBody)));
-                table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph(r.getDescription() != null ? r.getDescription() : "Fara descriere specficata.", fontBody)));
-                table.addCell(new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Paragraph(r.getStatus(), fontBody)));
+            for (DamageReport r : userReports) {
+                table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph(String.valueOf(r.getId()), fontBody)));
+                table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph(r.getLicensePlate(), fontBody)));
+                table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph(r.getDescription() != null ? r.getDescription() : "Fara descriere specficata.", fontBody)));
+                table.addCell(new com.lowagie.text.pdf.PdfPCell(new Paragraph(r.getStatus(), fontBody)));
             }
         }
 
         document.add(table);
 
-        // Subsol document (Clauza de conformitate)
-        document.add(new com.lowagie.text.Paragraph(" "));
-        com.lowagie.text.Paragraph footer = new com.lowagie.text.Paragraph("Document generat in mod automat de platforma AutoDamage Hub. Datele continute au valoare juridica in relatia cu service-urile partenere si asiguratorii.", fontBody);
-        footer.setAlignment(com.lowagie.text.Paragraph.ALIGN_CENTER);
+        // document footer
+        document.add(new Paragraph(" "));
+        Paragraph footer = new Paragraph("Document generat in mod automat de platforma AutoDamage Hub. Datele continute au valoare juridica in relatia cu service-urile partenere si asiguratorii.", fontBody);
+        footer.setAlignment(Paragraph.ALIGN_CENTER);
         document.add(footer);
 
         document.close();

@@ -6,7 +6,7 @@ const HelpCenter = () => {
     const faqs = [
         { q: "Cum functioneaza detectia automata?", a: "Sistemul nostru foloseste algoritmi de computer vision pentru a identifica piese avariate precum bare, aripi sau faruri din fotografiile incarcate." },
         { q: "Ce documente sunt necesare?", a: "Pentru a deschide un dosar aveti nevoie de talonul masinii, poze cu avaria si o scurta descriere a evenimentului." },
-        { q: "Cat dureaza evaluarea?", a: "Analiza initiala prin AI dureaza sub 60 de secunde, urmand ca un inspector sa valideze raportul in maxim 24 de ore." }
+        { q: "Cat dureaza evaluarea?", a: "Analiza initiala dureaza maximum 5 ore, urmand ca un inspector sa valideze raportul in maxim 24 de ore." }
     ];
 
     return (

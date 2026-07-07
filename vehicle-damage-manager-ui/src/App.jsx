@@ -19,12 +19,12 @@ import InspectorDashboard from './pages/InspectorDashboard';
 import OperatorDashboard from './pages/OperatorDashboard';
 import ServiceDashboard from './pages/ServiceDashboard';
 
-// Importurile pentru Admin
-import AdminDashboard from './pages/AdminDashboard'; // <-- ADAUGAT
+
+import AdminDashboard from './pages/AdminDashboard';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDamageReports from './pages/AdminDamageReports';
 import Analytics from './pages/Analytics';
-import TrackRepair from "./pages/TrackRepair.jsx"; // <-- ASIGURA-TE CA AI IMPORTUL DACA EXISTA
+import TrackRepair from "./pages/TrackRepair.jsx";
 
 const DashboardRedirect = () => {
     const userJson = localStorage.getItem('user');
@@ -81,7 +81,7 @@ const App = () => {
                         <Route path="/service-dashboard" element={<ServiceDashboard />} />
                     </Route>
 
-                    {/* GRUP RUTE ADMIN ACTUALIZAT */}
+                    {}
                     <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                         <Route path="/admin-dashboard" element={<AdminDashboard />} />
                         <Route path="/admin-user-management" element={<AdminUserManagement />} />

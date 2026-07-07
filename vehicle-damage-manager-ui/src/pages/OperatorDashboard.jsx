@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, Button, Tooltip, Zoom, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, Button, Tooltip, Zoom, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Alert } from '@mui/material';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -11,6 +11,7 @@ const OperatorDashboard = () => {
     const [reports, setReports] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     const fetchPendingReports = () => {
         api.get('/admin/reports')
@@ -28,6 +29,7 @@ const OperatorDashboard = () => {
     const handleStartAnalysis = (id) => {
         api.put(`/admin/reports/${id}/status`, { status: 'IN_ANALIZA' })
             .then(() => {
+                setSnackbar({ open: true, message: 'Dosarul a fost preluat pentru analiza.', severity: 'info' });
                 fetchPendingReports();
                 handleOpenDetails(id);
             })
@@ -51,11 +53,19 @@ const OperatorDashboard = () => {
     const handleExecuteAction = (statusValue) => {
         api.put(`/admin/reports/${selectedReport.id}/review`, { status: statusValue })
             .then(() => {
-                alert('Statusul dosarului a fost actualizat conform deciziei.');
+                setSnackbar({ open: true, message: 'Statusul dosarului a fost actualizat conform deciziei.', severity: 'success' });
                 handleCloseModal();
                 fetchPendingReports();
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setSnackbar({ open: true, message: 'Eroare la actualizarea statusului.', severity: 'error' });
+            });
+    };
+
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') return;
+        setSnackbar(prev => ({ ...prev, open: false }));
     };
 
     return (
@@ -128,7 +138,7 @@ const OperatorDashboard = () => {
                 </Table>
             </Paper>
 
-            <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth borderRadius="12px">
+            <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
                 {selectedReport && (
                     <>
                         <DialogTitle sx={{ bgcolor: '#1a2035', color: '#fff', fontWeight: 'bold' }}>
@@ -136,7 +146,7 @@ const OperatorDashboard = () => {
                         </DialogTitle>
                         <DialogContent dividers sx={{ p: 3 }}>
                             <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <Typography variant="subtitle2" color="textSecondary" fontWeight="bold">Numar Inmatriculare</Typography>
                                     <Typography variant="h6" fontWeight="700" color="primary" mb={2}>{selectedReport.licensePlate}</Typography>
 
@@ -146,12 +156,12 @@ const OperatorDashboard = () => {
                                     </Typography>
                                 </Grid>
 
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <Typography variant="subtitle2" color="textSecondary" fontWeight="bold" mb={1}>Fotografii Daune Incarcate</Typography>
                                     <Grid container spacing={1}>
                                         {selectedReport.images && selectedReport.images.length > 0 ? (
                                             selectedReport.images.map((img, idx) => (
-                                                <Grid item xs={6} key={idx}>
+                                                <Grid size={{ xs: 6 }} key={idx}>
                                                     <Paper variant="outlined" sx={{ height: 110, overflow: 'hidden', borderRadius: '8px' }}>
                                                         <img
                                                             src={`http://localhost:8080/uploads/${img.fileName}`}

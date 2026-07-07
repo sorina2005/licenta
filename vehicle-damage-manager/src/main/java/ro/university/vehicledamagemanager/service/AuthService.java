@@ -63,6 +63,11 @@ public class AuthService {
             throw new RuntimeException("Token-ul a expirat. Solicitati o noua resetare.");
         }
 
+        // Validate if the token has expired
+        if (user.getResetTokenExpiry() != null && user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token-ul de resetare a expirat.");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);

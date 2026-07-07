@@ -1,6 +1,9 @@
 package ro.university.vehicledamagemanager.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -11,8 +14,11 @@ import ro.university.vehicledamagemanager.repository.DamageReportRepository;
 import ro.university.vehicledamagemanager.repository.RepairItemRepository;
 import ro.university.vehicledamagemanager.repository.UserRepository;
 import ro.university.vehicledamagemanager.service.EmailService;
+import ro.university.vehicledamagemanager.service.PdfReportService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/reports")
@@ -23,24 +29,30 @@ public class AdminReportController {
     private DamageReportRepository damageReportRepository;
 
     @Autowired
-    private UserRepository userRepository; // Injectat corect la nivel de clasa
+    private UserRepository userRepository;
 
+    @Autowired
+    private RepairItemRepository repairItemRepository;
+
+    @Autowired
+    private PdfReportService pdfReportService;
+
+    @Autowired
+    private EmailService emailService;
+
+    // report creation and retrieval endpoints
+
+    // create a new damage report
     @PostMapping
     public ResponseEntity<?> createReport(@RequestBody DamageReport report) {
         try {
             String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
-            User user = userRepository.findAll().stream()
-                    .filter(u -> currentUsername.equalsIgnoreCase(u.getUsername()) || currentUsername.equalsIgnoreCase(u.getEmail()))
-                    .findFirst()
-                    .orElse(null);
+            User user = userRepository.findByUsernameOrEmail(currentUsername).orElse(null);
 
             if (user == null) {
-                user = userRepository.findAll().stream().findFirst().orElse(null);
-            }
-
-            if (user == null) {
-                return ResponseEntity.status(500).body("{\"message\":\"Eroare: Nu exista niciun utilizator in tabela users din baza de date.\"}");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"message\":\"Utilizatorul autentificat nu a fost gasit in sistem.\"}");
             }
 
             report.setUser(user);
@@ -58,6 +70,7 @@ public class AdminReportController {
         }
     }
 
+    // get damage report by id
     @GetMapping("/{id}")
     public ResponseEntity<?> getReportById(@PathVariable Long id) {
         try {
@@ -69,27 +82,15 @@ public class AdminReportController {
         }
     }
 
-    @PutMapping("/{id}/review")
-    public ResponseEntity<?> reviewReport(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
-        try {
-            DamageReport report = damageReportRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
-
-            String newStatus = payload.get("status");
-            report.setStatus(newStatus);
-
-            damageReportRepository.save(report);
-            return ResponseEntity.ok().body("{\"message\":\"Decizia operatorului a fost salvata!\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvarea deciziei: " + e.getMessage() + "\"}");
-        }
-    }
+    // get filtered reports for inspectors
     @GetMapping("/inspector/reports")
     public ResponseEntity<?> getInspectorReports() {
         try {
             List<DamageReport> reports = damageReportRepository.findAll().stream()
-                    .filter(r -> "VALIDAT_PENTRU_INSPECTIE".equalsIgnoreCase(r.getStatus()))
-                    .collect(java.util.stream.Collectors.toList());
+                    .filter(r -> "VALIDAT_PENTRU_INSPECTIE".equalsIgnoreCase(r.getStatus())
+                            || "REPARATIE_EFECTUATA".equalsIgnoreCase(r.getStatus())
+                            || "FINALIZAT".equalsIgnoreCase(r.getStatus()))
+                    .collect(Collectors.toList());
 
             for (DamageReport r : reports) {
                 if (r.getImages() != null) {
@@ -103,50 +104,11 @@ public class AdminReportController {
         }
     }
 
-    @PutMapping("/{id}/inspector-review")
-    public ResponseEntity<?> inspectorReview(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
-        try {
-            DamageReport report = damageReportRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
+    // workflow status update endpoints
 
-            String newStatus = payload.get("status");
-            report.setStatus(newStatus);
-
-            damageReportRepository.save(report);
-            return ResponseEntity.ok().body("{\"message\":\"Decizia inspectorului a fost salvata!\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvarea deciziei: " + e.getMessage() + "\"}");
-        }
-    }
-
-    @Autowired
-    private RepairItemRepository repairItemRepository;
-
-    @PostMapping("/{id}/finalize")
-    public ResponseEntity<?> finalizeReport(@PathVariable Long id, @RequestBody List<RepairItem> items) {
-        try {
-            DamageReport report = damageReportRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
-
-            for (RepairItem item : items) {
-                item.setDamageReport(report);
-                repairItemRepository.save(item);
-            }
-
-            report.setStatus("FINALIZAT");
-            damageReportRepository.save(report);
-
-            return ResponseEntity.ok().body("{\"message\":\"Devizul a fost salvat si reparatia finalizata!\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"message\":\"Eroare la finalizarea reparatiei: " + e.getMessage() + "\"}");
-        }
-    }
-
-    @Autowired
-    private EmailService emailService;
-
+    // update report status and notify user via email
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateReportStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+    public ResponseEntity<?> updateReportStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         try {
             DamageReport report = damageReportRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
@@ -169,5 +131,75 @@ public class AdminReportController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"message\":\"Eroare: " + e.getMessage() + "\"}");
         }
+    }
+
+    // save operator review decision
+    @PutMapping("/{id}/review")
+    public ResponseEntity<?> reviewReport(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            DamageReport report = damageReportRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
+
+            String newStatus = payload.get("status");
+            report.setStatus(newStatus);
+
+            damageReportRepository.save(report);
+            return ResponseEntity.ok().body("{\"message\":\"Decizia operatorului a fost salvata!\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvarea deciziei: " + e.getMessage() + "\"}");
+        }
+    }
+
+    // save inspector review decision
+    @PutMapping("/{id}/inspector-review")
+    public ResponseEntity<?> inspectorReview(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            DamageReport report = damageReportRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
+
+            String newStatus = payload.get("status");
+            report.setStatus(newStatus);
+
+            damageReportRepository.save(report);
+            return ResponseEntity.ok().body("{\"message\":\"Decizia inspectorului a fost salvata!\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la salvarea deciziei: " + e.getMessage() + "\"}");
+        }
+    }
+
+    // processing and generation endpoints
+
+    // finalize repair and save repair items
+    @PostMapping("/{id}/finalize")
+    public ResponseEntity<?> finalizeReport(@PathVariable Long id, @RequestBody List<RepairItem> items) {
+        try {
+            DamageReport report = damageReportRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Dosarul nu a fost gasit"));
+
+            for (RepairItem item : items) {
+                item.setDamageReport(report);
+                repairItemRepository.save(item);
+            }
+
+            report.setStatus("FINALIZAT");
+            damageReportRepository.save(report);
+
+            return ResponseEntity.ok().body("{\"message\":\"Devizul a fost salvat si reparatia finalizata!\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"message\":\"Eroare la finalizarea reparatiei: " + e.getMessage() + "\"}");
+        }
+    }
+
+    // export report details to pdf
+    @GetMapping("/{id}/export-pdf")
+    public ResponseEntity<byte[]> exportReportToPdf(@PathVariable Long id) {
+        DamageReport report = damageReportRepository.findById(id).orElseThrow();
+        byte[] pdfBytes = pdfReportService.generateDamageReport(report);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "Dosar_Dauna_" + id + ".pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }

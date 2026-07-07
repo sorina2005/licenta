@@ -7,10 +7,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.university.vehicledamagemanager.model.DamageImage;
 import ro.university.vehicledamagemanager.model.DamageReport;
+import ro.university.vehicledamagemanager.model.RepairItem;
 import ro.university.vehicledamagemanager.model.User;
 import ro.university.vehicledamagemanager.repository.DamageImageRepository;
 import ro.university.vehicledamagemanager.repository.DamageReportRepository;
 import ro.university.vehicledamagemanager.repository.UserRepository;
+
 
 
 import java.nio.file.Files;
@@ -19,6 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/client/reports")
@@ -33,6 +36,7 @@ public class DamageReportController {
 
     @Autowired
     private UserRepository userRepository;
+
 
     @PostMapping("/{id}/upload-images")
     public ResponseEntity<?> uploadImages(@PathVariable Long id, @RequestParam("files") MultipartFile[] files) {

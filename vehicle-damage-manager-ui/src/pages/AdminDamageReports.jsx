@@ -25,7 +25,6 @@ const AdminDamageReports = () => {
     };
 
     const handleDownloadPDF = () => {
-        // Deschide direct link-ul de download din backend
         window.open('http://localhost:8080/api/admin/reports/export/pdf', '_blank');
     };
 

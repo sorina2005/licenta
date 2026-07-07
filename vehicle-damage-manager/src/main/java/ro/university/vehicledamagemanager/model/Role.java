@@ -1,4 +1,4 @@
-package com.example.vehicledamagemanager.model;
+package ro.university.vehicledamagemanager.model;
 
 public enum Role {
     ADMIN,

@@ -28,12 +28,13 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/vehicles/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/client/process-plate").permitAll()
-                        .requestMatchers("/api/client/**").permitAll()
+                        .requestMatchers("/api/client/**").authenticated()
                         .requestMatchers("/api/admin/reports/**").permitAll()
                         .requestMatchers("/api/reports/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()

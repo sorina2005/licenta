@@ -32,8 +32,17 @@ public class User {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    private com.example.vehicledamagemanager.model.Role role;
+    private ro.university.vehicledamagemanager.model.Role role;
 
+    /**
+     * Utility method to get role without 'ROLE_' prefix.
+     * @return User's role name appropriately formatted
+     */
+    public String getFormattedRole() {
+        return (role != null) ? role.name().replace("ROLE_", "") : "CLIENT";
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vehicle> vehicles = new ArrayList<>();
 

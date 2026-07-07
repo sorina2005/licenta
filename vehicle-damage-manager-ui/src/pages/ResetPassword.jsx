@@ -11,11 +11,9 @@ const ResetPassword = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    // 1. Initializăm eroarea direct la crearea stării dacă lipsește token-ul
     const [error, setError] = useState(!token ? 'Acces neautorizat. Link-ul de resetare este invalid sau lipseste token-ul.' : '');
     const [success, setSuccess] = useState(false);
 
-    // 2. Calculăm starea direct din valoarea token-ului (Stare Derivată - Fără useState/useEffect)
     const isTokenPresent = Boolean(token);
 
     const handleSubmit = async (e) => {

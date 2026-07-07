@@ -100,7 +100,7 @@ const ReportDamage = () => {
                 const response = await api.post('/client/reports', {
                     username: loggedInUser.username,
                     licensePlate: plateNumber,
-                    description: descriereCompleta, // <--- Trimitem textul unitar aici
+                    description: descriereCompleta,
                     status: 'IN_ASTEPTARE'
                 });
 

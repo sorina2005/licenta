@@ -89,9 +89,18 @@ const ServiceDashboard = () => {
     };
 
     const handleSendDeviz = () => {
-        api.post(`/admin/reports/${selectedReportId}/finalize`, repairItems)
+        // Convertim si curatam datele pentru a elimina complet string-urile goale ('')
+        const cleanedItems = repairItems.map(item => ({
+            componentName: item.componentName || 'Piesa Nespecificata',
+            partPrice: item.partPrice === '' || isNaN(item.partPrice) ? 0 : Number(item.partPrice),
+            quantity: item.quantity === '' || isNaN(item.quantity) ? 1 : Number(item.quantity),
+            laborPrice: item.laborPrice === '' || isNaN(item.laborPrice) ? 0 : Number(item.laborPrice)
+        }));
+
+        // Se efectueaza apelul catre backend cu vectorul curatat corect
+        api.put(`/admin/reports/${selectedReportId}/finalize-repair`, cleanedItems)
             .then(() => {
-                setSnackbar({ open: true, message: 'Devizul a fost inregistrat si dosarul finalizat.', severity: 'success' });
+                setSnackbar({ open: true, message: 'Devizul a fost trimis catre inspector.', severity: 'success' });
                 setIsModalOpen(false);
                 fetchReports();
             })
@@ -196,7 +205,8 @@ const ServiceDashboard = () => {
 
                     {repairItems.map((item, idx) => (
                         <Grid container spacing={2} alignItems="center" key={idx} sx={{ mb: 2 }}>
-                            <Grid item xs={12} sm={4}>
+                            {/* Proprietatile item, xs, sm au fost migrate la structura size conform MUI v7 */}
+                            <Grid size={{ xs: 12, sm: 4 }}>
                                 <TextField
                                     label="Denumire piesa / componenta"
                                     variant="outlined"
@@ -206,7 +216,7 @@ const ServiceDashboard = () => {
                                     onChange={(e) => handleFieldChange(idx, 'componentName', e.target.value)}
                                 />
                             </Grid>
-                            <Grid item xs={4} sm={2}>
+                            <Grid size={{ xs: 4, sm: 2 }}>
                                 <TextField
                                     label="Pret piesa"
                                     type="number"
@@ -217,7 +227,7 @@ const ServiceDashboard = () => {
                                     onChange={(e) => handleFieldChange(idx, 'partPrice', e.target.value)}
                                 />
                             </Grid>
-                            <Grid item xs={4} sm={2}>
+                            <Grid size={{ xs: 4, sm: 2 }}>
                                 <TextField
                                     label="Cantitate"
                                     type="number"
@@ -228,7 +238,7 @@ const ServiceDashboard = () => {
                                     onChange={(e) => handleFieldChange(idx, 'quantity', e.target.value)}
                                 />
                             </Grid>
-                            <Grid item xs={4} sm={2}>
+                            <Grid size={{ xs: 4, sm: 2 }}>
                                 <TextField
                                     label="Pret manopera"
                                     type="number"
@@ -239,7 +249,7 @@ const ServiceDashboard = () => {
                                     onChange={(e) => handleFieldChange(idx, 'laborPrice', e.target.value)}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={2} align="center">
+                            <Grid size={{ xs: 12, sm: 2 }} align="center">
                                 <IconButton color="error" onClick={() => handleRemoveItemRow(idx)} disabled={repairItems.length === 1}>
                                     <DeleteIcon />
                                 </IconButton>

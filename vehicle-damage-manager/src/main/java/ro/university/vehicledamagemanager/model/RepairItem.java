@@ -1,8 +1,12 @@
 package ro.university.vehicledamagemanager.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "repair_items")
 public class RepairItem {
 
@@ -17,6 +21,7 @@ public class RepairItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "damage_report_id")
+    @com.fasterxml.jackson.annotation.JsonBackReference
     private DamageReport damageReport;
 
     public Long getId() { return id; }
