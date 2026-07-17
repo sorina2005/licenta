@@ -157,7 +157,7 @@ const ReportDamage = () => {
                             </Button>
                         </Box>
 
-                        {/* Container principal flexibil si aliniat perfect */}
+                        {/* container principal */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
                             <TextField
@@ -168,7 +168,7 @@ const ReportDamage = () => {
                                 onChange={(e) => setPlateNumber(e.target.value)}
                             />
 
-                            {/* Randul 2: Judet si Oras */}
+                            {}
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                 <TextField
                                     required
@@ -186,7 +186,7 @@ const ReportDamage = () => {
                                 />
                             </Box>
 
-                            {/* Randul 3: Data si Tip accident */}
+                            {}
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                 <TextField
                                     fullWidth
@@ -211,7 +211,7 @@ const ReportDamage = () => {
                                 </TextField>
                             </Box>
 
-                            {/* Randul 4: Descriere */}
+                            {}
                             <TextField
                                 fullWidth
                                 multiline
@@ -255,7 +255,7 @@ const ReportDamage = () => {
 
     return (
         <Box sx={{ width: '100%', mt: 2 }}>
-            <Typography variant="h4" fontWeight="bold" mb={4}>Raportare Dauna Noua</Typography>
+            <Typography variant="h4" fontWeight="bold" mb={4}>Raportare dauna noua</Typography>
             <Stepper activeStep={activeStep}>
                 {steps.map((label) => (
                     <Step key={label}><StepLabel>{label}</StepLabel></Step>
@@ -274,7 +274,7 @@ const ReportDamage = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
                             <Button disabled={activeStep === 0 || loading} onClick={handleBack} sx={{ mr: 1 }}>Inapoi</Button>
                             <Button variant="contained" onClick={handleNext} disabled={loading}>
-                                {loading ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Finalizeaza si Trimite' : 'Continua')}
+                                {loading ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Finalizeaza si trimite' : 'Continua')}
                             </Button>
                         </Box>
                     </>

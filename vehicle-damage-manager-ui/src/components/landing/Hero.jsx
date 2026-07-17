@@ -60,7 +60,7 @@ const Hero = () => {
                                 fontSize: { xs: '2.5rem', md: '3.5rem' }
                             }}
                         >
-                            Gestionare Inteligenta pentru <Box component="span" sx={{
+                            Gestionare inteligenta pentru <Box component="span" sx={{
                             background: 'linear-gradient(90deg, #1976d2, #64b5f6)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -97,7 +97,7 @@ const Hero = () => {
                                     }
                                 }}
                             >
-                                Incepe Acum
+                                Incepe acum
                             </Button>
 
                         </Stack>
@@ -148,7 +148,7 @@ const Hero = () => {
                                     </Box>
                                 </Box>
 
-                                <Typography variant="caption" color="textSecondary">Status AI: Identificare Placa (Succes: B-123-ABC)</Typography>
+                                <Typography variant="caption" color="textSecondary">Status: Identificare Placa (Succes: B-123-ABC)</Typography>
                                 <Box sx={{ width: '100%', height: 6, bgcolor: '#e0e0e0', borderRadius: 3 }}>
                                     <Box sx={{ width: '75%', height: '100%', bgcolor: 'primary.main', borderRadius: 3 }} />
                                 </Box>
@@ -170,7 +170,6 @@ const Hero = () => {
                             color: 'white',
                             animation: 'float 4s ease-in-out infinite'
                         }}>
-                            AI
                         </Box>
                     </Grid>
                 </Grid>

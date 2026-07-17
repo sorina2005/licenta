@@ -40,7 +40,7 @@ public class PdfReportService {
             document.add(new Paragraph("DATE IDENTIFICARE AUTOVEHICUL", boldFont));
             document.add(new Paragraph("--------------------------------------------------------------------------------------------------------", normalFont));
 
-            // Cautare dinamica in tabela vehicles conform logicii propuse
+            // automatic search
             Vehicle v = null;
             if (report.getUser() != null && report.getLicensePlate() != null) {
                 Optional<Vehicle> vehicleOptional = vehicleRepository.findByUserIdAndPlateNumber(
@@ -54,18 +54,18 @@ public class PdfReportService {
 
             if (v != null) {
                 document.add(new Paragraph("Marca / Model: " + v.getBrand() + " " + v.getModel(), normalFont));
-                document.add(new Paragraph("Numar Inmatriculare: " + v.getPlateNumber(), normalFont));
-                document.add(new Paragraph("Serie Sasiu (VIN): " + (v.getVin() != null ? v.getVin() : "Nespecificat"), normalFont));
+                document.add(new Paragraph("Numar inmatriculare: " + v.getPlateNumber(), normalFont));
+                document.add(new Paragraph("Serie sasiu (VIN): " + (v.getVin() != null ? v.getVin() : "Nespecificat"), normalFont));
             } else {
-                document.add(new Paragraph("Numar Inmatriculare: " + report.getLicensePlate(), normalFont));
+                document.add(new Paragraph("Numar inmatriculare: " + report.getLicensePlate(), normalFont));
                 document.add(new Paragraph("Nota: Detaliile masinii nu au fost gasite in tabela de vehicule.", normalFont));
             }
             document.add(Chunk.NEWLINE);
 
             document.add(new Paragraph("DETALII DOSAR DAUNA", boldFont));
             document.add(new Paragraph("--------------------------------------------------------------------------------------------------------", normalFont));
-            document.add(new Paragraph("Status Final Dosar: " + report.getStatus(), normalFont));
-            document.add(new Paragraph("Descriere Initiala Avarii: " + (report.getDescription() != null ? report.getDescription() : "Fara specificatii"), normalFont));
+            document.add(new Paragraph("Status final dosar: " + report.getStatus(), normalFont));
+            document.add(new Paragraph("Descriere initiala avarii: " + (report.getDescription() != null ? report.getDescription() : "Fara specificatii"), normalFont));
             document.add(Chunk.NEWLINE);
 
             if (report.getRepairItems() != null && !report.getRepairItems().isEmpty()) {
@@ -78,8 +78,8 @@ public class PdfReportService {
                 table.setWidths(new float[]{3, 2, 1, 2, 2});
 
                 table.addCell(new PdfPCell(new Phrase("Componenta", boldFont)));
-                table.addCell(new PdfPCell(new Phrase("Pret Piesa", boldFont)));
-                table.addCell(new PdfPCell(new Phrase("Cant.", boldFont)));
+                table.addCell(new PdfPCell(new Phrase("Pret piesa", boldFont)));
+                table.addCell(new PdfPCell(new Phrase("Cantitate", boldFont)));
                 table.addCell(new PdfPCell(new Phrase("Manopera", boldFont)));
                 table.addCell(new PdfPCell(new Phrase("Total", boldFont)));
 

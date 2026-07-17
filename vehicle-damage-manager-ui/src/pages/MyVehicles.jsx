@@ -21,7 +21,7 @@ const MyVehicles = () => {
 
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    // Preluarea vehiculelor din baza de date la incarcarea paginii
+    // preluarea vehiculelor din baza de date la incarcarea paginii
     const fetchVehicles = () => {
         const userId = localStorage.getItem('userId');
         api.get(`/vehicles?userId=${userId}`)
@@ -68,12 +68,11 @@ const MyVehicles = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Sterge vehiculul din baza de date pe baza ID-ului
     const handleDelete = (id) => {
         api.delete(`/vehicles/${id}`)
             .then(() => {
                 setSnackbar({ open: true, message: 'Vehiculul a fost sters cu succes!', severity: 'success' });
-                fetchVehicles(); // Reincarcare tabel
+                fetchVehicles();
             })
             .catch(err => {
                 console.error(err);
@@ -166,7 +165,7 @@ const MyVehicles = () => {
                     <TextField
                         margin="dense"
                         name="plateNumber"
-                        label="Numar Inmatriculare"
+                        label="Numar inmatriculare"
                         fullWidth
                         variant="outlined"
                         value={formData.plateNumber}
@@ -175,7 +174,7 @@ const MyVehicles = () => {
                     <TextField
                         margin="dense"
                         name="vin"
-                        label="Serie Sasiu (VIN)"
+                        label="Serie sasiu (VIN)"
                         fullWidth
                         variant="outlined"
                         value={formData.vin}

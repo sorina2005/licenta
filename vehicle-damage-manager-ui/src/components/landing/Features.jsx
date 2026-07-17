@@ -24,7 +24,7 @@ const Features = () => {
                             mb: 2
                         }}
                     >
-                        Ecosistem Digital
+                        Ecosistem digital
                     </Typography>
                     <Typography
                         variant="h3"
@@ -36,7 +36,7 @@ const Features = () => {
                             fontSize: { xs: '2rem', md: '2.8rem' }
                         }}
                     >
-                        Tehnologie de Ultima Ora pentru Daune Auto
+                        Tehnologie de ultima ora pentru daune auto
                     </Typography>
                 </Box>
 

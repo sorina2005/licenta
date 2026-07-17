@@ -48,7 +48,7 @@ public class AuthService {
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
-        message.setSubject("Resetare Parola - AutoDamage Hub");
+        message.setSubject("Resetare parola - AutoDamage Hub");
         message.setText("Pentru a va reseta parola, accesati urmatorul link:\n" +
                 "http://localhost:3000/reset-password?token=" + token);
 
@@ -63,7 +63,7 @@ public class AuthService {
             throw new RuntimeException("Token-ul a expirat. Solicitati o noua resetare.");
         }
 
-        // Validate if the token has expired
+        // validate if the token has expired
         if (user.getResetTokenExpiry() != null && user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Token-ul de resetare a expirat.");
         }

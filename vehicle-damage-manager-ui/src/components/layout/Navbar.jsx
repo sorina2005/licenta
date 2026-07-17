@@ -18,11 +18,11 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Stare pentru meniul dropdown (Desktop)
+    // stare pentru meniul dropdown (Desktop)
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
 
-    // Stare pentru meniul lateral (Mobile)
+    // stare pentru meniul lateral (Mobile)
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const userJson = localStorage.getItem('user');
@@ -50,7 +50,7 @@ const Navbar = () => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
     const isClient = storedUser?.role?.replace('ROLE_', '').toUpperCase() === 'CLIENT';
 
-    // Componenta pentru meniul lateral (Mobile)
+    // componenta pentru meniul lateral (Mobile)
     const drawerContent = (
         <Box sx={{ width: 280, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
@@ -158,7 +158,7 @@ const Navbar = () => {
                         <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Hub</Box>
                     </Typography>
 
-                    {/* Navigarea Desktop pentru Autentificati */}
+                    {}
                     {user && (
                         <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
                             <Button
@@ -181,10 +181,10 @@ const Navbar = () => {
                     )}
                 </Box>
 
-                {/* Container Actiuni si Navigare Desktop */}
+                {}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
 
-                    {/* Element vizibil doar pe Mobile - Hamburger Icon */}
+                    {/* element vizibil doar pe mobil */}
                     <IconButton
                         color="inherit"
                         aria-label="open drawer"
@@ -195,7 +195,7 @@ const Navbar = () => {
                         <MenuIcon />
                     </IconButton>
 
-                    {/* Elemente vizibile doar pe Desktop */}
+                    {}
                     <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
                         {user ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -293,7 +293,7 @@ const Navbar = () => {
                 </Box>
             </Toolbar>
 
-            {/* Meniul Lateral (Drawer) pentru vizualizarea pe Mobile */}
+            {}
             <Drawer
                 anchor="right"
                 open={mobileOpen}

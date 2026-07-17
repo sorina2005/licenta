@@ -15,7 +15,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // Normalizare in litere mari pentru a preveni erorile de tip 'admin' vs 'ADMIN'
+    // normalizare in litere mari pentru a preveni erorile de tip 'admin' vs 'ADMIN'
     const currentRole = (user.role || '').toUpperCase();
     const normalizedAllowedRoles = allowedRoles.map(role => role.toUpperCase());
 

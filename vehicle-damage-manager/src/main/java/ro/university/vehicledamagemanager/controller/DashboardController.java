@@ -229,30 +229,6 @@ public class DashboardController {
         }
     }
 
-//    // update report status
-//    @PutMapping("/admin/reports/{id}/status")
-//    public ResponseEntity<?> updateReportStatus(
-//            @PathVariable Long id,
-//            @RequestBody Map<String, String> request) {
-//        try {
-//            String newStatus = request.get("status");
-//            if (newStatus == null || newStatus.isEmpty()) {
-//                return ResponseEntity.badRequest().body("Statusul transmis este invalid.");
-//            }
-//
-//            return damageReportRepository.findById(id)
-//                    .map(report -> {
-//                        report.setStatus(newStatus.toUpperCase());
-//                        damageReportRepository.save(report);
-//                        return ResponseEntity.ok().body("{\"message\":\"Status actualizat cu succes!\"}");
-//                    })
-//                    .orElse(ResponseEntity.status(404).body("Dosarul de dauna cu ID-ul " + id + " nu a fost gasit."));
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(500).body("Eroare la actualizarea statusului: " + e.getMessage());
-//        }
-//    }
-
     // log repair items and finalize report status
     @PutMapping("/admin/reports/{id}/finalize-repair")
     public ResponseEntity<?> finalizeRepair(@PathVariable Long id, @RequestBody List<RepairItem> items) {

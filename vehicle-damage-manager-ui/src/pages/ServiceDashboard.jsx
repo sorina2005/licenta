@@ -89,7 +89,6 @@ const ServiceDashboard = () => {
     };
 
     const handleSendDeviz = () => {
-        // Convertim si curatam datele pentru a elimina complet string-urile goale ('')
         const cleanedItems = repairItems.map(item => ({
             componentName: item.componentName || 'Piesa Nespecificata',
             partPrice: item.partPrice === '' || isNaN(item.partPrice) ? 0 : Number(item.partPrice),
@@ -97,7 +96,6 @@ const ServiceDashboard = () => {
             laborPrice: item.laborPrice === '' || isNaN(item.laborPrice) ? 0 : Number(item.laborPrice)
         }));
 
-        // Se efectueaza apelul catre backend cu vectorul curatat corect
         api.put(`/admin/reports/${selectedReportId}/finalize-repair`, cleanedItems)
             .then(() => {
                 setSnackbar({ open: true, message: 'Devizul a fost trimis catre inspector.', severity: 'success' });
@@ -193,11 +191,11 @@ const ServiceDashboard = () => {
 
             <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ bgcolor: '#1a2035', color: '#fff', fontWeight: 'bold' }}>
-                    Introducere Deviz Reparatie - Dosar #{selectedReportId}
+                    Introducere deviz reparatie - Dosar #{selectedReportId}
                 </DialogTitle>
                 <DialogContent dividers sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="subtitle1" fontWeight="700">Lista Piese si Manopera</Typography>
+                        <Typography variant="subtitle1" fontWeight="700">Lista piese si manopera</Typography>
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddItemRow} size="small">
                             Adauga linie
                         </Button>
@@ -205,7 +203,7 @@ const ServiceDashboard = () => {
 
                     {repairItems.map((item, idx) => (
                         <Grid container spacing={2} alignItems="center" key={idx} sx={{ mb: 2 }}>
-                            {/* Proprietatile item, xs, sm au fost migrate la structura size conform MUI v7 */}
+                            {}
                             <Grid size={{ xs: 12, sm: 4 }}>
                                 <TextField
                                     label="Denumire piesa / componenta"
@@ -259,7 +257,7 @@ const ServiceDashboard = () => {
 
                     <Box sx={{ mt: 3, p: 2, bgcolor: '#f1f5f9', borderRadius: '8px', textAlign: 'right' }}>
                         <Typography variant="h6" fontWeight="700">
-                            Total Deviz: {calculateTotal()} RON
+                            Total deviz: {calculateTotal()} RON
                         </Typography>
                     </Box>
                 </DialogContent>

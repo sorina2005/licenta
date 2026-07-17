@@ -110,7 +110,6 @@ public class DamageReportController {
 
             DamageReport report = new DamageReport();
 
-            // Mapăm numărul de înmatriculare trimis din frontend
             if (payload.containsKey("licensePlate")) {
                 report.setLicensePlate((String) payload.get("licensePlate"));
             } else {

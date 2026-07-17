@@ -133,6 +133,20 @@ public class AdminReportController {
         }
     }
 
+
+    // export report details to pdf
+    @GetMapping("/{id}/export-pdf")
+    public ResponseEntity<byte[]> exportReportToPdf(@PathVariable Long id) {
+        DamageReport report = damageReportRepository.findById(id).orElseThrow();
+        byte[] pdfBytes = pdfReportService.generateDamageReport(report);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "Dosar_Dauna_" + id + ".pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
     // save operator review decision
     @PutMapping("/{id}/review")
     public ResponseEntity<?> reviewReport(@PathVariable Long id, @RequestBody Map<String, String> payload) {
@@ -190,16 +204,5 @@ public class AdminReportController {
         }
     }
 
-    // export report details to pdf
-    @GetMapping("/{id}/export-pdf")
-    public ResponseEntity<byte[]> exportReportToPdf(@PathVariable Long id) {
-        DamageReport report = damageReportRepository.findById(id).orElseThrow();
-        byte[] pdfBytes = pdfReportService.generateDamageReport(report);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("attachment", "Dosar_Dauna_" + id + ".pdf");
-
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-    }
 }

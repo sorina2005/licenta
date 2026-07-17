@@ -72,7 +72,7 @@ const OperatorDashboard = () => {
         <Box sx={{ p: 4, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" fontWeight="800" sx={{ color: '#1a2035', letterSpacing: '-0.5px' }}>
-                    Panou Operational - Operator
+                    Panou operational - Operator
                 </Typography>
                 <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
                     Gestionati, analizati si redirectionati dosarele nou inregistrate in sistem.
@@ -181,14 +181,6 @@ const OperatorDashboard = () => {
 
                             <Divider sx={{ my: 3 }} />
 
-                            <Box>
-                                <Typography variant="subtitle2" color="textSecondary" fontWeight="bold" mb={1}>Istoric Interactiune Asistent AI</Typography>
-                                <Paper variant="outlined" sx={{ p: 2, bgcolor: '#f0f4f8', borderRadius: '8px' }}>
-                                    <Typography variant="body2" color="textSecondary">
-                                        Clientul a parcurs asistentul conversational. Datele tehnice au fost extrase si stocate structural.
-                                    </Typography>
-                                </Paper>
-                            </Box>
                         </DialogContent>
                         <DialogActions sx={{ p: 2, bgcolor: '#f8f9fa', justifyContent: 'space-between' }}>
                             <Button variant="outlined" onClick={handleCloseModal} sx={{ borderRadius: '8px' }}>

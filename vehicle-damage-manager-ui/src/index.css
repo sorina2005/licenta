@@ -1,4 +1,4 @@
-/* Resetare globala pentru a elimina marginile implicite ale browserului */
+
 * {
   margin: 0;
   padding: 0;
@@ -7,7 +7,6 @@
 
 html, body {
   width: 100%;
-  /* Evitam 100vw pentru ca adauga latimea scrollbar-ului in calcul */
   overflow-x: hidden;
   background-color: #ffffff;
   color: #1a1a1a;
@@ -23,7 +22,6 @@ html, body {
   flex-direction: column;
 }
 
-/* Eliminam orice alte stiluri care pot forta latimea */
 img, video, canvas, svg {
   max-width: 100%;
 }
